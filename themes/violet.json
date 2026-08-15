@@ -1,0 +1,54 @@
+{
+  "id": "violet",
+  "label": "紫罗兰 / Violet Night",
+  "preview": {
+    "light": { "background": "#f7f5fc", "accent": "#6a3de8" },
+    "dark": { "background": "#14101f", "accent": "#9d7bff" }
+  },
+  "tokens": {
+    "--dsw-alias-bg-base": { "light": "#f7f5fc", "dark": "#14101f" },
+    "--dsw-alias-bg-layer-1": { "light": "#ffffff", "dark": "#191428" },
+    "--dsw-alias-bg-layer-2": { "light": "#efeaf9", "dark": "#201a33" },
+    "--dsw-alias-bg-layer-3": { "light": "#e7e0f4", "dark": "#282040" },
+    "--dsw-alias-bg-overlay": { "light": "#ffffff", "dark": "#191428" },
+    "--dsw-alias-bg-skeleton": { "light": "rgba(106,61,232,0.12)", "dark": "rgba(255,255,255,0.08)" },
+    "--dsw-alias-border-l1": { "light": "#e4dcf2", "dark": "rgba(255,255,255,0.07)" },
+    "--dsw-alias-border-l2": { "light": "#cdbfe6", "dark": "rgba(255,255,255,0.14)" },
+    "--dsw-alias-border-l3": { "light": "#b7a3d9", "dark": "rgba(255,255,255,0.20)" },
+    "--dsw-alias-brand-primary": { "light": "#6a3de8", "dark": "#9d7bff" },
+    "--dsw-alias-label-primary": { "light": "#231a3a", "dark": "#ece7f7" },
+    "--dsw-alias-label-secondary": { "light": "#6a5f85", "dark": "#a99fc4" },
+    "--dsw-alias-label-tertiary": { "light": "#9389ab", "dark": "#83789f" },
+    "--dsw-alias-label-primary-foreground": { "light": "#ffffff", "dark": "#14101f" },
+    "--dsw-alias-state-error-primary": { "light": "#d9455f", "dark": "#ff7d95" },
+    "--dsw-alias-state-success-primary": { "light": "#2f9e63", "dark": "#5bd694" },
+    "--dsw-alias-state-warn-primary": { "light": "#c98a1e", "dark": "#f0c05e" },
+    "--dsw-alias-button-primary-fill": { "light": "#6a3de8", "dark": "#9d7bff" },
+    "--dsw-alias-button-primary-hover": { "light": "#5a2fd6", "dark": "#b296ff" },
+    "--dsw-alias-button-primary-dimmed": { "light": "#e6defa", "dark": "#2c2444" },
+    "--dsw-alias-button-ghost-active-fill": { "light": "#ede6fb", "dark": "#282040" },
+    "--dsw-alias-button-ghost-active-hover": { "light": "#e2d8f8", "dark": "#2f2749" },
+    "--dsw-alias-button-ghost-active-border": { "light": "#6a3de8", "dark": "#9d7bff" },
+    "--dsw-alias-button-info-fill": { "light": "#6a3de8", "dark": "#9d7bff" },
+    "--dsw-alias-button-info-hover": { "light": "#5a2fd6", "dark": "#b296ff" },
+    "--dsw-alias-interactive-bg-hover": { "light": "rgba(106,61,232,0.08)", "dark": "rgba(255,255,255,0.08)" },
+    "--dsw-alias-interactive-bg-active": { "light": "rgba(106,61,232,0.15)", "dark": "rgba(255,255,255,0.14)" },
+    "--dsw-alias-markdown-code-block": { "light": "#f1edfb", "dark": "#201a33" },
+    "--dsw-alias-markdown-code-block-banner": { "light": "#e9e2f8", "dark": "#282040" },
+    "--dsw-alias-markdown-inline-code": { "light": "#e2d8f8", "dark": "#2f2749" },
+    "--dsw-alias-markdown-code-segment-selected": { "light": "#ffffff", "dark": "#282040" },
+    "--dsw-alias-markdown-code-segment-unselected": { "light": "#f1edfb", "dark": "#191428" },
+    "--dsw-alias-scrollbar-bg-l1": { "light": "#d5c8ee", "dark": "rgba(255,255,255,0.16)" },
+    "--dsw-alias-scrollbar-hover-l1": { "light": "#b19bd9", "dark": "rgba(255,255,255,0.28)" },
+    "--dsw-specific-sidebar-fill": { "light": "#f5f2fc", "dark": "#14101f" },
+    "--dsw-specific-menu": { "light": "#ffffff", "dark": "#201a33" },
+    "--dsw-font-family": {
+      "light": "'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif",
+      "dark": "'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif"
+    },
+    "--ds-font-family-code": {
+      "light": "'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace",
+      "dark": "'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace"
+    }
+  }
+}
