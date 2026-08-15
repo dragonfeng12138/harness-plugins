@@ -1,0 +1,87 @@
+# dsh-skins — ACG 外观包
+
+给 DSH 网页端换装：**主题族**（明/暗双套 token 配色 + 字体）与**皮肤**（背景、面板、配色、字体全套 CSS），ACG 风格原创绘制，零运行时依赖、零网络请求（字体只用系统栈，离线可用）。
+
+## 内容
+
+### 主题族（4 款，跟随 DSH「外观」明暗设置自动切换）
+
+| id | 名称 | 方向 |
+| --- | --- | --- |
+| `sakura` | 樱语 / Sakura | 粉白亮 · 深梅子暗 · 幼圆字体 |
+| `aurora` | 极光 / Aurora | 青绿 + 紫罗兰双色 |
+| `violet` | 紫罗兰之夜 / Violet Night | 紫调深色为主 |
+| `cyber` | 赛博霓虹 / Cyber Neon | 青/品红霓虹点缀 |
+
+每族覆盖 13 个核心 `--dsw-alias-*` token + 按钮 / 交互 / 代码块 / 滚动条等扩展 token + `--dsw-font-family` / `--ds-font-family-code` 字体栈（明暗同值）。
+
+### 皮肤（3 款，body 属性作用域 CSS，含明暗变体）
+
+| id | 名称 | 特色 |
+| --- | --- | --- |
+| `neon-tokyo` | 霓虹东京 | 深夜都市渐变 + 品红青霓虹辉光 + 扫描线 + 玻璃面板 |
+| `sakura-hanami` | 樱花祭 | 粉白花见天空 + 花瓣光斑 + 半透明花瓣面板 + 圆润字体 |
+| `retro-arcade` | 复古街机 | CRT 荧光绿 + 像素网格 + 扫描线 + 全等宽字体 |
+
+每款皮肤附 `a11y.css` 对比度修正层（后注入、同优先级后定义者胜），目标 WCAG AA。
+
+## 安装（手动渠道）
+
+1. 构建（在包目录内）：
+
+   ```powershell
+   node build.mjs          # 把 src/themes/skins 内联进 lib/client.js
+   node build.mjs --check  # 校验产物最新（CI 用）
+   node --test --experimental-test-isolation=none --test-force-exit "tests/unit/*.test.mjs"
+   ```
+
+2. 复制运行时文件到共享 node_modules：
+
+   ```powershell
+   $dst = "$env:USERPROFILE\.dsh\profiles\node_modules\dsh-skins"
+   Remove-Item $dst -Recurse -Force -ErrorAction SilentlyContinue
+   New-Item -ItemType Directory -Force $dst | Out-Null
+   Copy-Item package.json, cordis.patch.yml, README.md, LICENSE $dst
+   Copy-Item lib $dst -Recurse
+   ```
+
+3. 在 `$env:USERPROFILE\.dsh\profiles\web\cordis.patch.yml` 追加一行（如已存在则跳过）：
+
+   ```yaml
+   - insert:
+       - id: dsh-skins
+         name: dsh-skins
+   ```
+
+4. **刷新网页 GUI**（客户端 bundle 按请求动态下发，刷新即生效；host 端 HMR 自动重组）。
+
+5. 打开 **设置 → 常规 →「ACG 外观」**，在「主题 / 皮肤」两个轨道间挑选；「DSH 默认」卡片可一键恢复。
+
+选择经 localStorage 持久化，刷新页面自动恢复。插件停用/移除时，token override 层、皮肤 style 与 body 属性全部自动清理。
+
+## 与 dsh-theme-gallery 共存
+
+两者各自注册独立行、互不冲突；均通过 token override 层叠加，同 token 上后激活者胜。皮肤各自使用独立 body 属性作用域，可同时选择（视觉上皮肤轨道优先级更高，因为皮肤 CSS 后注入且作用于同一批变量）。
+
+## 扩展新主题/皮肤
+
+- 主题族：在 `themes/` 加一个 JSON（`id`、`label`、`preview.light/dark`、`tokens`，token 值必须是 `{ light, dark }` 字符串对），`node build.mjs` 后覆盖安装。
+- 皮肤：在 `skins/<id>/` 加 `skin.json`（`bodyAttr` 必须是 `data-dsh-skin-<id>`、`accent` 为 hex）+ `skin.css`（必须同时覆盖 `body[attr]` 与 `body[attr][data-ds-dark-theme]` 两个变体、并设置两个字体变量）+ 可选 `a11y.css`，重新构建覆盖安装。
+- `build.mjs` 会做 schema 校验与产物语法自检，`node build.mjs --check` 保证产物与源一致。
+
+## 目录
+
+```
+lib/client.js     构建产物（勿手改）
+lib/index.js      host 端 no-op（手动渠道契约）
+lib/invariant.js  no-op
+src/client.core.js  客户端引擎 + 画廊 UI（手写源）
+themes/*.json     主题族数据
+skins/<id>/       皮肤 manifest + CSS
+build.mjs         内联构建
+tests/unit/       构建与数据规范单测
+```
+
+## License
+
+MIT
