@@ -253,13 +253,21 @@ function applyBackdropLayer() {
     raw = preset.uri
   } else if (parsed.kind === 'url') raw = parsed.url
   else raw = parsed.data
+  // 玻璃色：取当前主题族 bg-base 的明/暗值做 62% 半透明，框架透出背景图。
+  const dark = document.body.hasAttribute('data-ds-dark-theme')
+  const family = THEMES.find((item) => item.id === selectedThemeId)
+  const token = family && family.tokens['--dsw-alias-bg-base']
+  const color = token && typeof token === 'object' ? token[dark ? 'dark' : 'light'] : null
+  const base = typeof color === 'string' && color !== '' ? color : (dark ? '#0d131a' : '#f9fafb')
   document.body.setAttribute('data-dsh-skins-backdrop', '')
   document.body.style.setProperty('--dsk-backdrop-image', `url("${escapeCssUrl(raw)}")`)
+  document.body.style.setProperty('--dsk-backdrop-frame-bg', `color-mix(in srgb, ${base} 62%, transparent)`)
 }
 
 function removeBackdropAttr() {
   document.body.removeAttribute('data-dsh-skins-backdrop')
   document.body.style.removeProperty('--dsk-backdrop-image')
+  document.body.style.removeProperty('--dsk-backdrop-frame-bg')
 }
 
 /** 持久化背景并立即生效；返回是否成功（本地文件可能超出容量）。 */
@@ -469,12 +477,16 @@ const UI_CSS = `
 .dsk-backdrop-url { display: flex; gap: 6px; }
 .dsk-error { color: var(--dsw-alias-state-error-primary); font-size: 11px; }
 body[data-dsh-skins-backdrop] {
+  padding: 34px 8px 32px;
   background-image: var(--dsk-backdrop-image);
   background-size: cover;
   background-position: center;
+  /* 让应用框架（.pI_x6G_frame 消费 --dsw-alias-bg-base）变为毛玻璃：
+     指向 JS 计算好的半透明玻璃色，避免 var() 自引用。!important 压过主题 token 内联值。 */
+  --dsw-alias-bg-base: var(--dsk-backdrop-frame-bg) !important;
 }
 body[data-dsh-skins-backdrop] [id=root] {
-  background: color-mix(in srgb, var(--dsw-alias-bg-base) 64%, transparent);
+  background: var(--dsw-alias-bg-base);
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
   border: 1px solid var(--dsw-alias-border-l2);
@@ -728,6 +740,9 @@ function apply(ctx) {
   // 恢复持久化选择（首次运行默认第一族）与字体覆盖层。
   restoreSelection()
   applyFontLayer()
+
+  // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
+  ctx.on('theme/change', () => applyBackdropLayer())
 
   // 插件停用：回收 override 层、皮肤 style 与 body 属性。
   ctx.effect(() => () => teardown())
