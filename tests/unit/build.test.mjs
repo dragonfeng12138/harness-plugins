@@ -68,3 +68,15 @@ test('font track is independent, persisted, and system-probed', async () => {
   assert.ok(output.includes('--dsw-font-family'), 'font layer must override the body font variable')
   assert.ok(output.includes('--ds-font-family-code'), 'font layer must override the code font variable')
 })
+
+test('theme track carries a background-image setting with presets and custom sources', async () => {
+  const { output } = await build()
+  assert.ok(output.includes('dsh-skins-backdrop-v1'), 'expected the backdrop storage key')
+  assert.ok(output.includes('data-dsh-skins-backdrop'), 'expected the backdrop body attribute')
+  assert.ok(output.includes('--dsk-backdrop-image'), 'expected the backdrop image variable')
+  assert.ok(output.includes('BACKDROPS'), 'expected the preset backdrop list')
+  assert.ok(output.includes("data:image/svg+xml;charset=utf-8,"), 'presets must be inline SVG data URIs')
+  assert.ok(output.includes('FileReader'), 'expected local file reading support')
+  assert.ok(output.includes('presetStarfield') && output.includes('presetNightCity'), 'expected preset artwork builders')
+  assert.ok(output.includes('url:'), 'expected custom URL storage format')
+})
