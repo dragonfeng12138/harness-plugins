@@ -24,6 +24,7 @@ const STORAGE_TRACK = 'dsh-skins-track-v1'
 const STORAGE_FONT_BODY = 'dsh-skins-font-body-v1'
 const STORAGE_FONT_CODE = 'dsh-skins-font-code-v1'
 const STORAGE_BACKDROP = 'dsh-skins-backdrop-v1'
+const STORAGE_GLASS = 'dsh-skins-glass-v1'
 const FONT_AUTO = 'auto'
 
 function readStored(key, fallback) {
@@ -235,7 +236,30 @@ function escapeCssUrl(raw) {
   return String(raw).replace(/(["\\])/g, '\\$1')
 }
 
-/** 背景层的 CSS 图像值：仅当主题轨道激活时生效；皮肤轨道清退。 */
+/** 玻璃化的背景 token 与无主题时的兜底色（明/暗）。 */
+const GLASS_TOKENS = [
+  { name: '--dsw-alias-bg-base', fallback: { light: '#f9fafb', dark: '#0d131a' } },
+  { name: '--dsw-alias-bg-layer-1', fallback: { light: '#ffffff', dark: '#14161c' } },
+  { name: '--dsw-alias-bg-layer-2', fallback: { light: '#f0f1f4', dark: '#1d2128' } },
+  { name: '--dsw-alias-bg-overlay', fallback: { light: '#ffffff', dark: '#171a20' } },
+  { name: '--dsw-specific-sidebar-fill', fallback: { light: '#f4f6f8', dark: '#101318' } },
+]
+
+/** 读取玻璃不透明度（0-100，默认 60）。 */
+function glassOpacityValue() {
+  const stored = parseInt(readStored(STORAGE_GLASS, '60'), 10)
+  if (!Number.isFinite(stored)) return 60
+  return Math.min(100, Math.max(0, stored))
+}
+
+/** 设置玻璃不透明度并即时生效。 */
+function setGlassOpacity(value) {
+  writeStored(STORAGE_GLASS, String(value))
+  applyBackdropLayer()
+  notify()
+}
+
+/** 背景层：全屏工作区背景 + 可调玻璃。仅当主题轨道激活时生效；皮肤轨道清退。 */
 function applyBackdropLayer() {
   if (activeTrack !== 'theme') {
     removeBackdropAttr()
@@ -253,21 +277,28 @@ function applyBackdropLayer() {
     raw = preset.uri
   } else if (parsed.kind === 'url') raw = parsed.url
   else raw = parsed.data
-  // 玻璃色：取当前主题族 bg-base 的明/暗值做 62% 半透明，框架透出背景图。
+  // 玻璃色：取当前主题族各 token 的明/暗值，按滑杆透明度做 color-mix。
   const dark = document.body.hasAttribute('data-ds-dark-theme')
   const family = THEMES.find((item) => item.id === selectedThemeId)
-  const token = family && family.tokens['--dsw-alias-bg-base']
-  const color = token && typeof token === 'object' ? token[dark ? 'dark' : 'light'] : null
-  const base = typeof color === 'string' && color !== '' ? color : (dark ? '#0d131a' : '#f9fafb')
+  const opacity = glassOpacityValue()
   document.body.setAttribute('data-dsh-skins-backdrop', '')
   document.body.style.setProperty('--dsk-backdrop-image', `url("${escapeCssUrl(raw)}")`)
-  document.body.style.setProperty('--dsk-backdrop-frame-bg', `color-mix(in srgb, ${base} 62%, transparent)`)
+  for (const { name, fallback } of GLASS_TOKENS) {
+    const token = family && family.tokens[name]
+    const color = token && typeof token === 'object' ? token[dark ? 'dark' : 'light'] : null
+    const base = typeof color === 'string' && color !== '' ? color : fallback[dark ? 'dark' : 'light']
+    const suffix = name.replace('--dsw-alias-', '').replace('--dsw-specific-', '')
+    document.body.style.setProperty(`--dsk-glass-${suffix}`, `color-mix(in srgb, ${base} ${opacity}%, transparent)`)
+  }
 }
 
 function removeBackdropAttr() {
   document.body.removeAttribute('data-dsh-skins-backdrop')
   document.body.style.removeProperty('--dsk-backdrop-image')
-  document.body.style.removeProperty('--dsk-backdrop-frame-bg')
+  for (const { name } of GLASS_TOKENS) {
+    const suffix = name.replace('--dsw-alias-', '').replace('--dsw-specific-', '')
+    document.body.style.removeProperty(`--dsk-glass-${suffix}`)
+  }
 }
 
 /** 持久化背景并立即生效；返回是否成功（本地文件可能超出容量）。 */
@@ -475,25 +506,24 @@ const UI_CSS = `
 .dsk-backdrop-thumb.is-named { width: auto; padding: 0 10px; font: inherit; font-size: 11px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-1); }
 .dsk-backdrop-thumb-label { position: absolute; inset: auto 0 0 0; padding: 1px 4px; background: rgba(0,0,0,.45); color: #fff; font-size: 9px; line-height: 13px; text-align: center; }
 .dsk-backdrop-url { display: flex; gap: 6px; }
+.dsk-glass-row { display: flex; align-items: center; gap: 10px; }
+.dsk-glass-row input[type=range] { flex: 1; accent-color: var(--dsw-alias-brand-primary); }
 .dsk-error { color: var(--dsw-alias-state-error-primary); font-size: 11px; }
 body[data-dsh-skins-backdrop] {
-  box-sizing: border-box;
-  padding: 34px 8px 32px;
   background-image: var(--dsk-backdrop-image);
   background-size: cover;
   background-position: center;
-  /* 让应用框架（.pI_x6G_frame 消费 --dsw-alias-bg-base）变为毛玻璃：
-     指向 JS 计算好的半透明玻璃色，避免 var() 自引用。!important 压过主题 token 内联值。 */
-  --dsw-alias-bg-base: var(--dsk-backdrop-frame-bg) !important;
+  /* 工作区全屏玻璃化：各背景 token 指向 JS 按滑杆透明度算好的颜色，
+     避免 var() 自引用。!important 压过主题 token 内联值。 */
+  --dsw-alias-bg-base: var(--dsk-glass-bg-base) !important;
+  --dsw-alias-bg-layer-1: var(--dsk-glass-bg-layer-1) !important;
+  --dsw-alias-bg-layer-2: var(--dsk-glass-bg-layer-2) !important;
+  --dsw-alias-bg-overlay: var(--dsk-glass-bg-overlay) !important;
+  --dsw-specific-sidebar-fill: var(--dsk-glass-sidebar-fill) !important;
 }
 body[data-dsh-skins-backdrop] [id=root] {
-  box-sizing: border-box;
-  background: var(--dsw-alias-bg-base);
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
 }
 `
 
@@ -609,6 +639,16 @@ function BackdropPanel() {
       ...BACKDROPS.map((item) => thumb(item.id, item.name, item.name, { backgroundImage: `url("${escapeCssUrl(item.uri)}")` })),
       thumb('custom', '自定义', '自定义图片（URL 或本地文件）', customStyle),
     ),
+    React.createElement('label', { className: 'dsk-font-row' },
+      React.createElement('span', { className: 'dsk-font-label' }, '毛玻璃透明度'),
+      React.createElement('div', { className: 'dsk-glass-row' },
+        React.createElement('input', {
+          type: 'range', min: '0', max: '100', step: '5', value: String(glassOpacityValue()), 'aria-label': '毛玻璃透明度',
+          onChange: (event) => setGlassOpacity(event.target.value),
+        }),
+        React.createElement('span', { className: 'dsk-count' }, glassOpacityValue() + '%'),
+      ),
+    ),
     React.createElement('div', { className: 'dsk-backdrop-url' },
       React.createElement('input', {
         ref: urlRef, className: 'dsk-search', type: 'text', value: urlDraft,
@@ -623,7 +663,7 @@ function BackdropPanel() {
       ),
     ),
     error !== '' ? React.createElement('div', { className: 'dsk-error' }, error) : null,
-    React.createElement('div', { className: 'dsk-hint' }, '预设背景为内置原创图（离线可用）；自定义图片保存在浏览器本地。皮肤激活时皮肤自带背景优先，回主题轨道自动恢复。'),
+    React.createElement('div', { className: 'dsk-hint' }, '背景图为全屏工作区背景（不改变窗口尺寸）；毛玻璃透明度滑杆控制工作区透出程度（0 全透 · 100 不透明）。预设为内置原创图（离线可用），自定义图片保存在浏览器本地。皮肤激活时皮肤自带背景优先，回主题轨道自动恢复。'),
   )
 }
 
