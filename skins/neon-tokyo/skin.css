@@ -1,0 +1,148 @@
+/*
+ * neon-tokyo — 霓虹东京
+ * Scope: body[data-dsh-skin-neon-tokyo]  = LIGHT variant (dawn city)
+ *        body[data-dsh-skin-neon-tokyo][data-ds-dark-theme] = DARK variant (night city)
+ * Only original CSS art: gradients, glows, scanlines. No external assets.
+ */
+
+/* ---------- shared: fonts ---------- */
+body[data-dsh-skin-neon-tokyo] {
+  --dsw-font-family: 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif;
+  --ds-font-family-code: 'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+/* ---------- light: dawn city ---------- */
+body[data-dsh-skin-neon-tokyo] {
+  color: #1a1b2e;
+  box-sizing: border-box;
+  background-color: #eef0fa;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(26, 27, 46, 0.022) 0 1px, rgba(0, 0, 0, 0) 1px 4px),
+    radial-gradient(circle at 12% 8%, rgba(255, 46, 196, 0.10), rgba(0, 0, 0, 0) 42%),
+    radial-gradient(circle at 88% 18%, rgba(46, 230, 255, 0.12), rgba(0, 0, 0, 0) 40%),
+    radial-gradient(circle at 55% 96%, rgba(124, 77, 255, 0.12), rgba(0, 0, 0, 0) 46%),
+    linear-gradient(168deg, #f4f6ff 0%, #eef0fa 48%, #fbe9f5 100%);
+  padding: 34px 8px 32px;
+}
+
+body[data-dsh-skin-neon-tokyo] [id=root] {
+  box-sizing: border-box;
+  -webkit-backdrop-filter: blur(6px);
+  background: linear-gradient(rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.62) 110px, rgba(255, 255, 255, 0.42) 100%);
+  border: 1px solid rgba(200, 30, 157, 0.38);
+  border-radius: 14px;
+  box-shadow:
+    0 0 24px rgba(255, 46, 196, 0.10),
+    0 8px 32px rgba(26, 27, 46, 0.16),
+    inset 0 1px rgba(255, 255, 255, 0.9);
+}
+
+body[data-dsh-skin-neon-tokyo] {
+  --dsw-alias-bg-base: #eef0fa;
+  --dsw-alias-bg-layer-1: #ffffff;
+  --dsw-alias-bg-layer-2: #e6e8f5;
+  --dsw-alias-bg-layer-3: #dcdfef;
+  --dsw-alias-bg-overlay: #ffffff;
+  --dsw-alias-bg-skeleton: rgba(26, 27, 46, 0.06);
+  --dsw-alias-border-l1: rgba(26, 27, 46, 0.06);
+  --dsw-alias-border-l2: rgba(200, 30, 157, 0.30);
+  --dsw-alias-border-l3: rgba(26, 27, 46, 0.12);
+  --dsw-alias-brand-primary: #c81e9d;
+  --dsw-alias-label-primary: #1a1b2e;
+  --dsw-alias-label-secondary: #565a7c;
+  --dsw-alias-label-tertiary: #868aa8;
+  --dsw-alias-label-primary-foreground: #ffffff;
+  --dsw-alias-state-error-primary: #d93a55;
+  --dsw-alias-state-success-primary: #0f9e63;
+  --dsw-alias-state-warn-primary: #b97a12;
+  --dsw-alias-button-primary-fill: #c81e9d;
+  --dsw-alias-button-primary-hover: #c2239a;
+  --dsw-alias-button-primary-dimmed: #f9e2f4;
+  --dsw-alias-button-ghost-active-fill: #f3d9ee;
+  --dsw-alias-button-ghost-active-hover: #ecc6e6;
+  --dsw-alias-button-ghost-active-border: #c81e9d;
+  --dsw-alias-button-info-fill: #0e9bb8;
+  --dsw-alias-button-info-hover: #22b3d2;
+  --dsw-alias-interactive-bg-hover: rgba(200, 30, 157, 0.08);
+  --dsw-alias-interactive-bg-active: rgba(200, 30, 157, 0.15);
+  --dsw-alias-markdown-code-block: #e9ebf7;
+  --dsw-alias-markdown-code-block-banner: #e0e2f2;
+  --dsw-alias-markdown-inline-code: #d8daec;
+  --dsw-alias-markdown-code-segment-selected: #ffffff;
+  --dsw-alias-markdown-code-segment-unselected: #e9ebf7;
+  --dsw-alias-scrollbar-bg-l1: #d3d2e8;
+  --dsw-alias-scrollbar-hover-l1: #b3aed4;
+  --dsw-specific-sidebar-fill: #f2f3fc;
+  --dsw-specific-menu: #ffffff;
+}
+
+body[data-dsh-skin-neon-tokyo] ::selection {
+  background: rgba(200, 30, 157, 0.35);
+  color: #ffffff;
+}
+
+/* ---------- dark: night city ---------- */
+body[data-dsh-skin-neon-tokyo][data-ds-dark-theme] {
+  color: #f2f4ff;
+  background-color: #0a0a14;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0 1px, rgba(0, 0, 0, 0) 1px 4px),
+    radial-gradient(circle at 12% 8%, rgba(255, 46, 196, 0.22), rgba(0, 0, 0, 0) 42%),
+    radial-gradient(circle at 88% 18%, rgba(46, 230, 255, 0.18), rgba(0, 0, 0, 0) 40%),
+    radial-gradient(circle at 55% 96%, rgba(124, 77, 255, 0.22), rgba(0, 0, 0, 0) 46%),
+    linear-gradient(168deg, #0d0d20 0%, #0a0a14 48%, #140b26 100%);
+}
+
+body[data-dsh-skin-neon-tokyo][data-ds-dark-theme] [id=root] {
+  background: linear-gradient(rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.035) 110px, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(255, 46, 196, 0.38);
+  box-shadow:
+    0 0 24px rgba(255, 46, 196, 0.16),
+    0 0 48px rgba(46, 230, 255, 0.10),
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    inset 0 1px rgba(255, 255, 255, 0.10);
+}
+
+body[data-dsh-skin-neon-tokyo][data-ds-dark-theme] {
+  --dsw-alias-bg-base: #0a0a14;
+  --dsw-alias-bg-layer-1: #12122a;
+  --dsw-alias-bg-layer-2: #181836;
+  --dsw-alias-bg-layer-3: #1f1f42;
+  --dsw-alias-bg-overlay: #14142e;
+  --dsw-alias-bg-skeleton: rgba(255, 255, 255, 0.08);
+  --dsw-alias-border-l1: rgba(255, 255, 255, 0.07);
+  --dsw-alias-border-l2: rgba(255, 46, 196, 0.30);
+  --dsw-alias-border-l3: rgba(255, 255, 255, 0.20);
+  --dsw-alias-brand-primary: #ff2ec4;
+  --dsw-alias-label-primary: #f2f4ff;
+  --dsw-alias-label-secondary: #b9c0dd;
+  --dsw-alias-label-tertiary: #8b93b8;
+  --dsw-alias-label-primary-foreground: #0a0a14;
+  --dsw-alias-state-error-primary: #ff5d7d;
+  --dsw-alias-state-success-primary: #35e0a1;
+  --dsw-alias-state-warn-primary: #ffb84d;
+  --dsw-alias-button-primary-fill: #ff2ec4;
+  --dsw-alias-button-primary-hover: #ff5ad2;
+  --dsw-alias-button-primary-dimmed: #2a1a33;
+  --dsw-alias-button-ghost-active-fill: #1f1f42;
+  --dsw-alias-button-ghost-active-hover: #26264e;
+  --dsw-alias-button-ghost-active-border: #ff2ec4;
+  --dsw-alias-button-info-fill: #2ee6ff;
+  --dsw-alias-button-info-hover: #63edff;
+  --dsw-alias-interactive-bg-hover: rgba(255, 255, 255, 0.08);
+  --dsw-alias-interactive-bg-active: rgba(255, 255, 255, 0.14);
+  --dsw-alias-markdown-code-block: #141430;
+  --dsw-alias-markdown-code-block-banner: #1b1b3a;
+  --dsw-alias-markdown-inline-code: #26264e;
+  --dsw-alias-markdown-code-segment-selected: #1f1f42;
+  --dsw-alias-markdown-code-segment-unselected: #12122a;
+  --dsw-alias-scrollbar-bg-l1: rgba(255, 46, 196, 0.22);
+  --dsw-alias-scrollbar-hover-l1: rgba(255, 46, 196, 0.40);
+  --dsw-specific-sidebar-fill: #0d0d20;
+  --dsw-specific-menu: #14142e;
+}
+
+body[data-dsh-skin-neon-tokyo][data-ds-dark-theme] ::selection {
+  background: rgba(255, 46, 196, 0.55);
+  color: #ffffff;
+}

@@ -1,0 +1,12 @@
+{
+  "id": "neon-tokyo",
+  "name": "霓虹东京",
+  "nameEn": "Neon Tokyo",
+  "author": "dsh-skins",
+  "tagline": "深夜都市 · 品红青霓虹 · 玻璃面板辉光",
+  "description": "赛博朋克风格的深夜东京：深蓝紫渐变城市夜空，品红与青色的霓虹辉光点缀在角落，半透明玻璃面板透出城市光晕，扫描线纹理与霓虹描边按钮营造电子都市氛围。原创 CSS 绘制，无外部素材。",
+  "tags": ["cyberpunk", "neon", "tokyo", "night", "city"],
+  "accent": "#ff2ec4",
+  "bodyAttr": "data-dsh-skin-neon-tokyo",
+  "order": 1
+}

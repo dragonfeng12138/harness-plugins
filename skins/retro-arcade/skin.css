@@ -1,0 +1,145 @@
+/*
+ * retro-arcade — 复古街机
+ * Scope: body[data-dsh-skin-retro-arcade]                 = LIGHT variant (daylight terminal)
+ *        body[data-dsh-skin-retro-arcade][data-ds-dark-theme] = DARK variant (CRT night)
+ * Only original CSS art: grid + scanlines + phosphor glow. No external assets.
+ */
+
+/* ---------- shared: fonts (all-monospace arcade vibe) ---------- */
+body[data-dsh-skin-retro-arcade] {
+  --dsw-font-family: 'Consolas', 'Cascadia Mono', 'Microsoft YaHei', 'PingFang SC', monospace;
+  --ds-font-family-code: 'Cascadia Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+/* ---------- light: daylight terminal ---------- */
+body[data-dsh-skin-retro-arcade] {
+  color: #0b2d1d;
+  box-sizing: border-box;
+  background-color: #eaf6ee;
+  background-image:
+    linear-gradient(rgba(14, 154, 90, 0.055) 1px, rgba(0, 0, 0, 0) 1px),
+    linear-gradient(90deg, rgba(14, 154, 90, 0.055) 1px, rgba(0, 0, 0, 0) 1px),
+    radial-gradient(circle at 85% 12%, rgba(53, 255, 157, 0.14), rgba(0, 0, 0, 0) 40%);
+  background-size: 24px 24px, 24px 24px, auto;
+  padding: 34px 8px 32px;
+}
+
+body[data-dsh-skin-retro-arcade] [id=root] {
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.88);
+  border: 2px solid #1f7a4d;
+  border-radius: 10px;
+  box-shadow:
+    4px 4px 0 rgba(14, 154, 90, 0.25),
+    0 8px 32px rgba(11, 45, 29, 0.14);
+}
+
+body[data-dsh-skin-retro-arcade] {
+  --dsw-alias-bg-base: #eaf6ee;
+  --dsw-alias-bg-layer-1: #ffffff;
+  --dsw-alias-bg-layer-2: #e0f0e6;
+  --dsw-alias-bg-layer-3: #d4e9dc;
+  --dsw-alias-bg-overlay: #ffffff;
+  --dsw-alias-bg-skeleton: rgba(14, 154, 90, 0.10);
+  --dsw-alias-border-l1: #cfe4d7;
+  --dsw-alias-border-l2: #9ccdb1;
+  --dsw-alias-border-l3: #6fb58d;
+  --dsw-alias-brand-primary: #0e9a5a;
+  --dsw-alias-label-primary: #0b2d1d;
+  --dsw-alias-label-secondary: #3c6b52;
+  --dsw-alias-label-tertiary: #6d947d;
+  --dsw-alias-label-primary-foreground: #ffffff;
+  --dsw-alias-state-error-primary: #d93a3a;
+  --dsw-alias-state-success-primary: #0e9a5a;
+  --dsw-alias-state-warn-primary: #b97a12;
+  --dsw-alias-button-primary-fill: #0e9a5a;
+  --dsw-alias-button-primary-hover: #0b7f4a;
+  --dsw-alias-button-primary-dimmed: #d2ecdc;
+  --dsw-alias-button-ghost-active-fill: #dff0e5;
+  --dsw-alias-button-ghost-active-hover: #cee6d7;
+  --dsw-alias-button-ghost-active-border: #0e9a5a;
+  --dsw-alias-button-info-fill: #0e9a5a;
+  --dsw-alias-button-info-hover: #0b7f4a;
+  --dsw-alias-interactive-bg-hover: rgba(14, 154, 90, 0.08);
+  --dsw-alias-interactive-bg-active: rgba(14, 154, 90, 0.15);
+  --dsw-alias-markdown-code-block: #e6f3ea;
+  --dsw-alias-markdown-code-block-banner: #dcefe2;
+  --dsw-alias-markdown-inline-code: #d3e9db;
+  --dsw-alias-markdown-code-segment-selected: #ffffff;
+  --dsw-alias-markdown-code-segment-unselected: #e6f3ea;
+  --dsw-alias-scrollbar-bg-l1: #bfdfcb;
+  --dsw-alias-scrollbar-hover-l1: #94c6a7;
+  --dsw-specific-sidebar-fill: #eef8f1;
+  --dsw-specific-menu: #ffffff;
+}
+
+body[data-dsh-skin-retro-arcade] ::selection {
+  background: rgba(14, 154, 90, 0.30);
+  color: #0b2d1d;
+}
+
+/* ---------- dark: CRT night ---------- */
+body[data-dsh-skin-retro-arcade][data-ds-dark-theme] {
+  color: #d8ffe9;
+  background-color: #02120a;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(53, 255, 157, 0.032) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    linear-gradient(rgba(53, 255, 157, 0.045) 1px, rgba(0, 0, 0, 0) 1px),
+    linear-gradient(90deg, rgba(53, 255, 157, 0.045) 1px, rgba(0, 0, 0, 0) 1px),
+    radial-gradient(circle at 50% 0%, rgba(53, 255, 157, 0.10), rgba(0, 0, 0, 0) 55%);
+  background-size: auto, 24px 24px, 24px 24px, auto;
+}
+
+body[data-dsh-skin-retro-arcade][data-ds-dark-theme] [id=root] {
+  background: rgba(4, 26, 14, 0.88);
+  border: 2px solid #1f7a4d;
+  border-radius: 10px;
+  box-shadow:
+    0 0 18px rgba(53, 255, 157, 0.18),
+    4px 4px 0 rgba(0, 0, 0, 0.55),
+    inset 0 0 28px rgba(53, 255, 157, 0.05);
+}
+
+body[data-dsh-skin-retro-arcade][data-ds-dark-theme] {
+  --dsw-alias-bg-base: #02120a;
+  --dsw-alias-bg-layer-1: #04180d;
+  --dsw-alias-bg-layer-2: #062213;
+  --dsw-alias-bg-layer-3: #082c19;
+  --dsw-alias-bg-overlay: #04180d;
+  --dsw-alias-bg-skeleton: rgba(255, 255, 255, 0.08);
+  --dsw-alias-border-l1: rgba(53, 255, 157, 0.12);
+  --dsw-alias-border-l2: rgba(53, 255, 157, 0.28);
+  --dsw-alias-border-l3: rgba(53, 255, 157, 0.42);
+  --dsw-alias-brand-primary: #35ff9d;
+  --dsw-alias-label-primary: #d8ffe9;
+  --dsw-alias-label-secondary: #8fd8b1;
+  --dsw-alias-label-tertiary: #5fa984;
+  --dsw-alias-label-primary-foreground: #02120a;
+  --dsw-alias-state-error-primary: #ff6b6b;
+  --dsw-alias-state-success-primary: #35ff9d;
+  --dsw-alias-state-warn-primary: #ffd35e;
+  --dsw-alias-button-primary-fill: #35ff9d;
+  --dsw-alias-button-primary-hover: #5effb4;
+  --dsw-alias-button-primary-dimmed: #0a3020;
+  --dsw-alias-button-ghost-active-fill: #082c19;
+  --dsw-alias-button-ghost-active-hover: #0a3520;
+  --dsw-alias-button-ghost-active-border: #35ff9d;
+  --dsw-alias-button-info-fill: #35ff9d;
+  --dsw-alias-button-info-hover: #5effb4;
+  --dsw-alias-interactive-bg-hover: rgba(53, 255, 157, 0.08);
+  --dsw-alias-interactive-bg-active: rgba(53, 255, 157, 0.14);
+  --dsw-alias-markdown-code-block: #062213;
+  --dsw-alias-markdown-code-block-banner: #082c19;
+  --dsw-alias-markdown-inline-code: #0a3520;
+  --dsw-alias-markdown-code-segment-selected: #082c19;
+  --dsw-alias-markdown-code-segment-unselected: #04180d;
+  --dsw-alias-scrollbar-bg-l1: rgba(53, 255, 157, 0.20);
+  --dsw-alias-scrollbar-hover-l1: rgba(53, 255, 157, 0.36);
+  --dsw-specific-sidebar-fill: #02120a;
+  --dsw-specific-menu: #062213;
+}
+
+body[data-dsh-skin-retro-arcade][data-ds-dark-theme] ::selection {
+  background: rgba(53, 255, 157, 0.40);
+  color: #02120a;
+}

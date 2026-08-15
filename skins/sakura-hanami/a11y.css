@@ -1,0 +1,15 @@
+/*
+ * sakura-hanami — 樱花祭 — 可访问性修正
+ * 原则：只提升对比度，不改皮肤素材、布局、尺寸、动画。
+ *
+ * 审计结论（AA ≥ 4.5:1 目标）：
+ *  1) 亮态主按钮：白字 on fill #d9538f ≈ 3.9 < 4.5 → 亮态 fill 重定义至 #c7407f（≈ 4.7 ✓）；
+ *     hover 本皮肤内置同值，达标。
+ *  2) 暗态主按钮：深色文字 #1e1219 on fill #f58ab8 ≈ 8.6 ✓。
+ *  3) 正文、代码块、次级文字亮/暗两态均达标，无需其他 override。
+ */
+body[data-dsh-skin-sakura-hanami] {
+  --dsw-alias-button-primary-fill: #c7407f;
+  --dsw-alias-button-info-fill: #c7407f;
+  --dsw-alias-button-info-hover: #b2356f;
+}

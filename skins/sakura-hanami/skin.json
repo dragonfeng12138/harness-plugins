@@ -1,0 +1,12 @@
+{
+  "id": "sakura-hanami",
+  "name": "樱花祭",
+  "nameEn": "Sakura Hanami",
+  "author": "dsh-skins",
+  "tagline": "粉白花见 · 半透明花瓣面板 · 圆润幼圆字体",
+  "description": "春日赏樱主题：粉白渐变天空与飘落的花瓣光斑（纯 CSS 径向渐变绘制），半透明花瓣面板透出柔光，圆润的幼圆字体与粉色描边按钮，营造温馨的 ACG 花见氛围。原创绘制，无外部素材。",
+  "tags": ["sakura", "spring", "pink", "kawaii", "hanami"],
+  "accent": "#d9538f",
+  "bodyAttr": "data-dsh-skin-sakura-hanami",
+  "order": 2
+}

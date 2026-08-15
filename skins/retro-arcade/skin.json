@@ -1,0 +1,12 @@
+{
+  "id": "retro-arcade",
+  "name": "复古街机",
+  "nameEn": "Retro Arcade",
+  "author": "dsh-skins",
+  "tagline": "CRT 荧光绿 · 像素网格底纹 · 全等宽街机字体",
+  "description": "80 年代街机厅主题：深色 CRT 荧幕底、荧光绿磷光文字与扫描线，网格底纹与像素描边按钮还原点阵质感，全等宽字体栈带来怀旧游戏机的代入感。原创 CSS 绘制，无外部素材。",
+  "tags": ["retro", "arcade", "crt", "pixel", "green"],
+  "accent": "#35ff9d",
+  "bodyAttr": "data-dsh-skin-retro-arcade",
+  "order": 3
+}
