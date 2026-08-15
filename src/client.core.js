@@ -477,6 +477,7 @@ const UI_CSS = `
 .dsk-backdrop-url { display: flex; gap: 6px; }
 .dsk-error { color: var(--dsw-alias-state-error-primary); font-size: 11px; }
 body[data-dsh-skins-backdrop] {
+  box-sizing: border-box;
   padding: 34px 8px 32px;
   background-image: var(--dsk-backdrop-image);
   background-size: cover;
@@ -486,6 +487,7 @@ body[data-dsh-skins-backdrop] {
   --dsw-alias-bg-base: var(--dsk-backdrop-frame-bg) !important;
 }
 body[data-dsh-skins-backdrop] [id=root] {
+  box-sizing: border-box;
   background: var(--dsw-alias-bg-base);
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);

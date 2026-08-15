@@ -76,6 +76,7 @@ test('theme track carries a background-image setting with presets and custom sou
   assert.ok(output.includes('--dsk-backdrop-image'), 'expected the backdrop image variable')
   assert.ok(output.includes('--dsk-backdrop-frame-bg'), 'expected the frame glass tint variable')
   assert.ok(output.includes('--dsw-alias-bg-base: var(--dsk-backdrop-frame-bg)'), 'frame must consume the glass tint via the alias token')
+  assert.ok(output.includes('box-sizing: border-box'), 'backdrop padding must not overflow the viewport (box-sizing)')
   assert.ok(output.includes("'theme/change'"), 'expected theme-change recompute subscription')
   assert.ok(output.includes('BACKDROPS'), 'expected the preset backdrop list')
   assert.ok(output.includes("data:image/svg+xml;charset=utf-8,"), 'presets must be inline SVG data URIs')
