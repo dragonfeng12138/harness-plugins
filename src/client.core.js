@@ -21,6 +21,9 @@ const SKINS = /*@__SKINS__@*/
 const STORAGE_THEME = 'dsh-skins-theme-v1'
 const STORAGE_SKIN = 'dsh-skins-skin-v1'
 const STORAGE_TRACK = 'dsh-skins-track-v1'
+const STORAGE_FONT_BODY = 'dsh-skins-font-body-v1'
+const STORAGE_FONT_CODE = 'dsh-skins-font-code-v1'
+const FONT_AUTO = 'auto'
 
 function readStored(key, fallback) {
   try {
@@ -34,12 +37,103 @@ function writeStored(key, value) {
   try { localStorage.setItem(key, value) } catch {}
 }
 
+// ---- 字体轨道：独立于主题/皮肤，探测本机已安装字体（Canvas 度量，无权限/无网络） ----
+const BODY_FONT_CANDIDATES = [
+  { family: 'Microsoft YaHei', label: '微软雅黑 Microsoft YaHei' },
+  { family: 'Microsoft YaHei UI', label: 'Microsoft YaHei UI' },
+  { family: 'DengXian', label: '等线 DengXian' },
+  { family: 'SimSun', label: '宋体 SimSun' },
+  { family: 'NSimSun', label: '新宋体 NSimSun' },
+  { family: 'SimHei', label: '黑体 SimHei' },
+  { family: 'KaiTi', label: '楷体 KaiTi' },
+  { family: 'FangSong', label: '仿宋 FangSong' },
+  { family: 'YouYuan', label: '幼圆 YouYuan' },
+  { family: 'STZhongsong', label: '华文中宋 STZhongsong' },
+  { family: 'Segoe UI', label: 'Segoe UI' },
+  { family: 'Arial', label: 'Arial' },
+  { family: 'Verdana', label: 'Verdana' },
+  { family: 'Tahoma', label: 'Tahoma' },
+  { family: 'Georgia', label: 'Georgia' },
+  { family: 'Times New Roman', label: 'Times New Roman' },
+  { family: 'Calibri', label: 'Calibri' },
+  { family: 'Cambria', label: 'Cambria' },
+  { family: 'Trebuchet MS', label: 'Trebuchet MS' },
+  { family: 'Comic Sans MS', label: 'Comic Sans MS' },
+]
+
+const CODE_FONT_CANDIDATES = [
+  { family: 'Consolas', label: 'Consolas' },
+  { family: 'Courier New', label: 'Courier New' },
+  { family: 'Cascadia Mono', label: 'Cascadia Mono' },
+  { family: 'Cascadia Code', label: 'Cascadia Code' },
+  { family: 'JetBrains Mono', label: 'JetBrains Mono' },
+  { family: 'Fira Code', label: 'Fira Code' },
+  { family: 'Source Code Pro', label: 'Source Code Pro' },
+  { family: 'Inconsolata', label: 'Inconsolata' },
+  { family: 'MS Gothic', label: 'MS Gothic' },
+  { family: 'DejaVu Sans Mono', label: 'DejaVu Sans Mono' },
+]
+
+/**
+ * 宽度比对法探测字体是否安装：用统一测试串在 sans-serif/serif/monospace
+ * 三种泛型回退上分别度量，若把候选字体放在回退前面时宽度发生变化，
+ * 则说明候选字体真实参与渲染（已安装）。无权限弹窗、无网络请求。
+ */
+function createFontDetector() {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (context === null) return () => false
+  const TEST = 'MiWm字经0123456789-+=|'
+  const GENERICS = ['sans-serif', 'serif', 'monospace']
+  const baseline = {}
+  const width = (font) => {
+    context.font = font
+    return context.measureText(TEST).width
+  }
+  for (const generic of GENERICS) baseline[generic] = width(`72px ${generic}`)
+  return (family) => {
+    for (const generic of GENERICS) {
+      if (width(`72px '${family}', ${generic}`) !== baseline[generic]) return true
+    }
+    return false
+  }
+}
+const detectFont = createFontDetector()
+const detectInstalled = (candidates) => candidates.filter((item) => detectFont(item.family))
+
+/** 字体覆盖层：用户选定字体时以 !important 覆盖主题/皮肤的字体变量。 */
+let fontLayerTag = null
+function applyFontLayer() {
+  const body = String(readStored(STORAGE_FONT_BODY, FONT_AUTO)).replace(/['"]/g, '')
+  const code = String(readStored(STORAGE_FONT_CODE, FONT_AUTO)).replace(/['"]/g, '')
+  if (body === FONT_AUTO && code === FONT_AUTO) {
+    teardownFontLayer()
+    return
+  }
+  if (fontLayerTag === null) {
+    fontLayerTag = document.createElement('style')
+    fontLayerTag.setAttribute('data-dsh-skins-font', '')
+    document.head.appendChild(fontLayerTag)
+  }
+  const declarations = []
+  if (body !== FONT_AUTO) declarations.push(`--dsw-font-family: '${body}', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif !important;`)
+  if (code !== FONT_AUTO) declarations.push(`--ds-font-family-code: '${code}', 'Cascadia Mono', Consolas, 'Courier New', 'Microsoft YaHei', monospace !important;`)
+  fontLayerTag.textContent = `body {\n  ${declarations.join('\n  ')}\n}`
+}
+function teardownFontLayer() {
+  if (fontLayerTag !== null) {
+    fontLayerTag.remove()
+    fontLayerTag = null
+  }
+}
+
 // ---- 轨道状态（模块级，apply 注入 service 后可用） ----
 let themeService = null
 let removeOverride = null
 let selectedThemeId = null
 let selectedSkinId = null
 let activeTrack = '' // 'theme' | 'skin' | ''
+let activeView = 'theme' // 'theme' | 'skin' | 'font'（UI 视图，字体视图不与轨道互斥）
 
 const listeners = new Set()
 function subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener) } }
@@ -114,7 +208,11 @@ function resetTracks() {
 
 /** 切到主题轨道：恢复上次主题（无记录则第一族）。 */
 function openThemeTrack() {
-  if (activeTrack === 'theme') return
+  activeView = 'theme'
+  if (activeTrack === 'theme') {
+    notify()
+    return
+  }
   const id = selectedThemeId !== null ? selectedThemeId : (THEMES[0] ? THEMES[0].id : null)
   if (id !== null) {
     activateTheme(id)
@@ -127,12 +225,22 @@ function openThemeTrack() {
 
 /** 切到皮肤轨道：清主题层；曾选过皮肤则恢复。 */
 function openSkinTrack() {
-  if (activeTrack === 'skin') return
+  activeView = 'skin'
+  if (activeTrack === 'skin') {
+    notify()
+    return
+  }
   clearThemeOverride()
   activeTrack = 'skin'
   writeStored(STORAGE_TRACK, 'skin')
   if (selectedSkinId !== null && SKINS.some((item) => item.id === selectedSkinId)) activateSkin(selectedSkinId)
   else notify()
+}
+
+/** 切到字体视图：纯 UI 切换，不动主题/皮肤轨道。 */
+function openFontView() {
+  activeView = 'font'
+  notify()
 }
 
 /** apply 时恢复持久化选择；无效 id 回退，首次运行默认第一族。 */
@@ -142,6 +250,7 @@ function restoreSelection() {
     const id = readStored(STORAGE_SKIN, '')
     if (SKINS.some((item) => item.id === id)) {
       activateSkin(id)
+      activeView = 'skin'
       return
     }
   }
@@ -149,16 +258,19 @@ function restoreSelection() {
     const id = readStored(STORAGE_THEME, '')
     if (THEMES.some((item) => item.id === id)) {
       activateTheme(id)
+      activeView = 'theme'
       return
     }
   }
   if (THEMES.length > 0) activateTheme(THEMES[0].id)
+  activeView = 'theme'
 }
 
 /** 插件停用：回收全部副作用。 */
 function teardown() {
   clearThemeOverride()
   clearSkin()
+  teardownFontLayer()
 }
 
 // ---- 画廊 UI 样式（自持，随插件卸载移除） ----
@@ -186,7 +298,63 @@ const UI_CSS = `
 .dsk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .dsk-meta { color: var(--dsw-alias-label-secondary); font-size: 10px; }
 .dsk-empty { padding: 14px; border: 1px dashed var(--dsw-alias-border-l2); border-radius: 10px; color: var(--dsw-alias-label-secondary); text-align: center; font-size: 12px; }
+.dsk-font-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 10px; }
+.dsk-font-label { color: var(--dsw-alias-label-secondary); font-size: 12px; }
+.dsk-select { box-sizing: border-box; width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; outline: none; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); font: inherit; font-size: 12px; }
+.dsk-select:focus { border-color: var(--dsw-alias-brand-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-brand-primary) 18%, transparent); }
+.dsk-font-preview { padding: 10px 12px; border: 1px dashed var(--dsw-alias-border-l2); border-radius: 10px; font-size: 13px; color: var(--dsw-alias-label-primary); }
+.dsk-font-toolbar { display: flex; align-items: center; gap: 10px; }
+.dsk-btn { padding: 6px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); font: inherit; font-size: 12px; cursor: pointer; }
+.dsk-btn:hover { border-color: var(--dsw-alias-brand-primary); }
 `
+
+// ---- 字体设置面板（settings.section 页签内的字体视图） ----
+function FontPanel() {
+  const [, force] = React.useReducer((value) => value + 1, 0)
+  const [tick, setTick] = React.useState(0)
+  const bodyFonts = React.useMemo(() => detectInstalled(BODY_FONT_CANDIDATES), [tick])
+  const codeFonts = React.useMemo(() => detectInstalled(CODE_FONT_CANDIDATES), [tick])
+  const bodyValue = readStored(STORAGE_FONT_BODY, FONT_AUTO)
+  const codeValue = readStored(STORAGE_FONT_CODE, FONT_AUTO)
+
+  const pick = (key) => (event) => {
+    writeStored(key, event.target.value)
+    applyFontLayer()
+    force()
+  }
+
+  const optionList = (value, fonts) => {
+    const entries = fonts.slice()
+    if (value !== FONT_AUTO && !entries.some((item) => item.family === value)) {
+      entries.unshift({ family: value, label: value })
+    }
+    return entries
+  }
+
+  const picker = (labelText, key, value, fonts) => React.createElement('label', { className: 'dsk-font-row' },
+    React.createElement('span', { className: 'dsk-font-label' }, labelText),
+    React.createElement('select', { className: 'dsk-select', value, onChange: pick(key) },
+      React.createElement('option', { value: FONT_AUTO }, '跟随主题 / 皮肤'),
+      ...optionList(value, fonts).map((item) => React.createElement('option', {
+        key: item.family, value: item.family, style: { fontFamily: `'${item.family}', sans-serif` },
+      }, item.label)),
+    ),
+  )
+
+  return React.createElement('div', { className: 'dsk-root' },
+    React.createElement('div', { className: 'dsk-hint' }, '字体为独立设置：选定后覆盖主题/皮肤自带的字体，选「跟随主题 / 皮肤」则交还。列表只显示本机已安装的字体（自动探测，无需联网）。'),
+    picker('正文字体', STORAGE_FONT_BODY, bodyValue, bodyFonts),
+    picker('代码字体', STORAGE_FONT_CODE, codeValue, codeFonts),
+    React.createElement('div', {
+      className: 'dsk-font-preview',
+      style: { fontFamily: bodyValue === FONT_AUTO ? undefined : `'${bodyValue}', sans-serif` },
+    }, '预览 · ACG 字体示例 · Aa Bb 012 · 深蓝深海深霓虹'),
+    React.createElement('div', { className: 'dsk-font-toolbar' },
+      React.createElement('button', { type: 'button', className: 'dsk-btn', onClick: () => setTick((value) => value + 1) }, '重新检测字体'),
+      React.createElement('span', { className: 'dsk-count' }, `正文 ${bodyFonts.length} 款 · 代码 ${codeFonts.length} 款`),
+    ),
+  )
+}
 
 // ---- 画廊 React 组件（settings.section 独立页签内容） ----
 function Gallery() {
@@ -209,20 +377,19 @@ function Gallery() {
     ),
   )
 
+  const tab = (view, label, onClick) => React.createElement('button', {
+    type: 'button', role: 'tab', 'aria-selected': activeView === view,
+    className: 'dsk-tab' + (activeView === view ? ' is-active' : ''),
+    onClick,
+  }, label)
+
   const tabs = React.createElement('div', { className: 'dsk-tabs', role: 'tablist', 'aria-label': '外观轨道' },
-    React.createElement('button', {
-      type: 'button', role: 'tab', 'aria-selected': activeTrack === 'theme',
-      className: 'dsk-tab' + (activeTrack === 'theme' ? ' is-active' : ''),
-      onClick: openThemeTrack,
-    }, '主题'),
-    React.createElement('button', {
-      type: 'button', role: 'tab', 'aria-selected': activeTrack === 'skin',
-      className: 'dsk-tab' + (activeTrack === 'skin' ? ' is-active' : ''),
-      onClick: openSkinTrack,
-    }, '皮肤'),
+    tab('theme', '主题', openThemeTrack),
+    tab('skin', '皮肤', openSkinTrack),
+    tab('font', '字体', openFontView),
   )
 
-  const body = activeTrack === 'skin' ? renderSkinBody() : renderThemeBody()
+  const body = activeView === 'skin' ? renderSkinBody() : activeView === 'font' ? React.createElement(FontPanel) : renderThemeBody()
 
   function renderThemeBody() {
     return React.createElement('div', { className: 'dsk-root' },
@@ -286,7 +453,7 @@ function Gallery() {
   return React.createElement('div', { className: 'dsk-wrap' },
     React.createElement('div', { className: 'dsk-heading' },
       React.createElement('div', { className: 'dsk-title' }, 'ACG 外观'),
-      React.createElement('div', { className: 'dsk-count' }, activeTrack === 'skin' ? SKINS.length + ' 皮肤' : THEMES.length + ' 主题'),
+      React.createElement('div', { className: 'dsk-count' }, activeView === 'skin' ? SKINS.length + ' 皮肤' : activeView === 'font' ? '独立设置' : THEMES.length + ' 主题'),
     ),
     tabs,
     body,
@@ -300,8 +467,9 @@ function apply(ctx) {
   if (theme === undefined || slots === undefined) return
   themeService = theme
 
-  // 恢复持久化选择（首次运行默认第一族）。
+  // 恢复持久化选择（首次运行默认第一族）与字体覆盖层。
   restoreSelection()
+  applyFontLayer()
 
   // 插件停用：回收 override 层、皮肤 style 与 body 属性。
   ctx.effect(() => () => teardown())

@@ -57,3 +57,14 @@ test('every skin css is scoped to its own body attribute in both variants', asyn
     assert.ok(skin.css.includes('--ds-font-family-code'), `${skin.id} css must set --ds-font-family-code`)
   }
 })
+
+test('font track is independent, persisted, and system-probed', async () => {
+  const { output } = await build()
+  assert.ok(output.includes('dsh-skins-font-body-v1'), 'expected the font body storage key')
+  assert.ok(output.includes('dsh-skins-font-code-v1'), 'expected the font code storage key')
+  assert.ok(output.includes('data-dsh-skins-font'), 'expected the font layer style marker')
+  assert.ok(output.includes('BODY_FONT_CANDIDATES'), 'expected the system font candidate list')
+  assert.ok(output.includes('createFontDetector'), 'expected the canvas probing detector')
+  assert.ok(output.includes('--dsw-font-family'), 'font layer must override the body font variable')
+  assert.ok(output.includes('--ds-font-family-code'), 'font layer must override the code font variable')
+})
