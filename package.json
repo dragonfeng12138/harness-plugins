@@ -1,6 +1,6 @@
 {
   "name": "dsh-skins",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ACG-style appearance pack for DSH web: token theme families with native light/dark pairs plus full CSS skins, both replacing the overall style, palette, and fonts.",
   "type": "module",
   "main": "lib/index.js",

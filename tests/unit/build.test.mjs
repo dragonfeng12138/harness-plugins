@@ -86,12 +86,36 @@ test('theme track carries a background-image setting with presets and custom sou
   assert.ok(output.includes('url:'), 'expected custom URL storage format')
 })
 
-test('host half registers a durable settings namespace', async () => {
+test('host half registers a durable settings namespace without external imports', async () => {
   const host = await readFile(new URL('../../lib/index.js', import.meta.url), 'utf8')
-  assert.ok(host.includes("settingsNamespace('dsh-skins')"), 'host must brand the dsh-skins settings namespace')
+  assert.ok(!/(from '@|from ")/.test(host), 'host must not import external packages (junction real-path resolution breaks them)')
+  assert.ok(host.includes('createRequire('), 'host must anchor-load schemastery from the profile node_modules')
   assert.ok(host.includes('settings.register('), 'host must register the namespace via the settings service')
   for (const field of ['track', 'themeId', 'skinId', 'fontBody', 'fontCode', 'backdrop', 'glass']) {
     assert.ok(host.includes(field), `host schema must cover the persisted field ${field}`)
+  }
+})
+
+test('host half loads in this environment and registers via the settings service', async () => {
+  const host = await import('../../lib/index.js')
+  assert.equal(typeof host.apply, 'function')
+  const calls = []
+  host.apply({
+    inject: (deps, callback) => {
+      calls.push(deps)
+      callback({
+        settings: {
+          register: (ns, schema) => {
+            const resolved = schema({ track: 'skin' })
+            assert.equal(resolved.track, 'skin')
+            assert.equal(resolved.glass, '60', 'schema must apply defaults')
+          },
+        },
+      })
+    },
+  })
+  if (calls.length > 0) {
+    assert.deepEqual(calls, [['settings']], 'host must inject the settings service')
   }
 })
 
