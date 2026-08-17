@@ -41,14 +41,6 @@
     "--dsw-alias-scrollbar-bg-l1": { "light": "#bfdcd9", "dark": "rgba(255,255,255,0.16)" },
     "--dsw-alias-scrollbar-hover-l1": { "light": "#94c2bf", "dark": "rgba(255,255,255,0.28)" },
     "--dsw-specific-sidebar-fill": { "light": "#eef8f7", "dark": "#0c1418" },
-    "--dsw-specific-menu": { "light": "#ffffff", "dark": "#16252c" },
-    "--dsw-font-family": {
-      "light": "'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif",
-      "dark": "'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif"
-    },
-    "--ds-font-family-code": {
-      "light": "'JetBrains Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace",
-      "dark": "'JetBrains Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace"
-    }
+    "--dsw-specific-menu": { "light": "#ffffff", "dark": "#16252c" }
   }
 }

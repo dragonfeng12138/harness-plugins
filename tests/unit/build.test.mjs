@@ -16,7 +16,7 @@ test('build embeds at least one theme family and one skin', async () => {
   assert.ok(output.includes('id: "dsh-skins"'), 'output must register the dsh-skins bundle id')
 })
 
-test('every theme family carries valid { light, dark } pairs and both font stacks', async () => {
+test('every theme family carries valid { light, dark } pairs and no font defaults', async () => {
   const { output, themeCount } = await build()
   const themesStart = output.indexOf('const THEMES = ')
   const themesEnd = output.indexOf('const SKINS = ', themesStart)
@@ -32,9 +32,8 @@ test('every theme family carries valid { light, dark } pairs and both font stack
       assert.equal(typeof value.light, 'string', `${family.id} token ${name} light must be a string`)
       assert.equal(typeof value.dark, 'string', `${family.id} token ${name} dark must be a string`)
     }
-    assert.ok(family.tokens['--dsw-font-family'], `${family.id} must set --dsw-font-family`)
-    assert.ok(family.tokens['--ds-font-family-code'], `${family.id} must set --ds-font-family-code`)
-    assert.equal(family.tokens['--dsw-font-family'].light, family.tokens['--dsw-font-family'].dark, 'font stacks are scheme-invariant')
+    assert.ok(!family.tokens['--dsw-font-family'], `${family.id} must not set --dsw-font-family (fonts are theme-independent)`)
+    assert.ok(!family.tokens['--ds-font-family-code'], `${family.id} must not set --ds-font-family-code`)
   }
 })
 

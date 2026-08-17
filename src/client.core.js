@@ -553,7 +553,7 @@ function FontPanel() {
   const picker = (labelText, key, value, fonts) => React.createElement('label', { className: 'dsk-font-row' },
     React.createElement('span', { className: 'dsk-font-label' }, labelText),
     React.createElement('select', { className: 'dsk-select', value, onChange: pick(key) },
-      React.createElement('option', { value: FONT_AUTO }, '跟随主题 / 皮肤'),
+      React.createElement('option', { value: FONT_AUTO }, '默认（不覆盖）'),
       ...optionList(value, fonts).map((item) => React.createElement('option', {
         key: item.family, value: item.family, style: { fontFamily: `'${item.family}', sans-serif` },
       }, item.label)),
@@ -561,7 +561,7 @@ function FontPanel() {
   )
 
   return React.createElement('div', { className: 'dsk-root' },
-    React.createElement('div', { className: 'dsk-hint' }, '字体为独立设置：选定后覆盖主题/皮肤自带的字体，选「跟随主题 / 皮肤」则交还。列表只显示本机已安装的字体（自动探测，无需联网）。'),
+    React.createElement('div', { className: 'dsk-hint' }, '字体为独立设置：选定后覆盖皮肤自带的字体；选「默认」时皮肤字体生效，无皮肤时使用 DSH 默认字体。列表只显示本机已安装的字体（自动探测，无需联网）。'),
     picker('正文字体', STORAGE_FONT_BODY, bodyValue, bodyFonts),
     picker('代码字体', STORAGE_FONT_CODE, codeValue, codeFonts),
     React.createElement('div', {
@@ -704,7 +704,7 @@ function Gallery() {
 
   function renderThemeBody() {
     return React.createElement('div', { className: 'dsk-root' },
-      React.createElement('div', { className: 'dsk-hint' }, '配色与字体随明暗外观自动切换；明暗模式请在「外观」行选择。'),
+      React.createElement('div', { className: 'dsk-hint' }, '配色随明暗外观自动切换；明暗模式请在「外观」行选择，字体在「字体」页签单独设置。'),
       React.createElement('input', {
         className: 'dsk-search', type: 'search', value: query, placeholder: '搜索主题…', 'aria-label': '搜索主题',
         onChange: (event) => setQuery(event.target.value),
@@ -725,7 +725,7 @@ function Gallery() {
               ),
               React.createElement('span', { className: 'dsk-copy' },
                 React.createElement('span', { className: 'dsk-name' }, item.label),
-                React.createElement('span', { className: 'dsk-meta' }, '明暗双套 · 含字体'),
+                React.createElement('span', { className: 'dsk-meta' }, '明暗双套配色'),
               ),
             )),
           ),
