@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { build } from '../../build.mjs'
 
 test('build output is deterministic (idempotent)', async () => {
@@ -83,4 +84,22 @@ test('theme track carries a background-image setting with presets and custom sou
   assert.ok(output.includes('FileReader'), 'expected local file reading support')
   assert.ok(output.includes('presetStarfield') && output.includes('presetNightCity'), 'expected preset artwork builders')
   assert.ok(output.includes('url:'), 'expected custom URL storage format')
+})
+
+test('host half registers a durable settings namespace', async () => {
+  const host = await readFile(new URL('../../lib/index.js', import.meta.url), 'utf8')
+  assert.ok(host.includes("settingsNamespace('dsh-skins')"), 'host must brand the dsh-skins settings namespace')
+  assert.ok(host.includes('settings.register('), 'host must register the namespace via the settings service')
+  for (const field of ['track', 'themeId', 'skinId', 'fontBody', 'fontCode', 'backdrop', 'glass']) {
+    assert.ok(host.includes(field), `host schema must cover the persisted field ${field}`)
+  }
+})
+
+test('client persists via the host settings scope with a localStorage fallback', async () => {
+  const { output } = await build()
+  assert.ok(output.includes('settingsScope'), 'client must read the settingsScope service')
+  assert.ok(output.includes("bind({ namespace: 'dsh-skins' })"), 'client must bind the dsh-skins namespace')
+  assert.ok(output.includes('adoptHostState'), 'client must adopt saved host state on ready')
+  assert.ok(output.includes('persistReady'), 'client must gate host writes on readiness')
+  assert.ok(output.includes('getPersist') && output.includes('setPersist'), 'client must route all state through the persist layer')
 })
