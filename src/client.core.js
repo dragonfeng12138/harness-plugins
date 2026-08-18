@@ -716,7 +716,7 @@ function BackdropPanel() {
     event.target.value = ''
     if (file === undefined) return
     if (!file.type.startsWith('image/')) { setError('请选择图片文件'); return }
-    if (file.size > 3500000) { setError('图片过大（>3.5MB），请压缩后重试或改用 URL'); return }
+    if (file.size > 15728640) { setError('图片过大（>15MB），请压缩后重试或改用 URL'); return }
     const reader = new FileReader()
     reader.onerror = () => setError('读取文件失败')
     reader.onload = async () => {
@@ -908,11 +908,11 @@ function apply(ctx) {
   // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
   ctx.on('theme/change', () => applyBackdropLayer())
 
-  // 背景图文件存取通道（host RPC）；不可用时本地图片功能降级。
-  const connection = ctx.get('connection')
-  if (connection !== undefined && connection.rpc !== undefined) {
-    rpcClient = connection.rpc
-  }
+  // 背景图文件存取通道（host RPC）：connection 服务就绪后注入；缺失时本地图片降级。
+  ctx.inject(['connection'], (connectionCtx) => {
+    rpcClient = connectionCtx.connection.rpc
+    applyBackdropLayer()
+  })
 
   // host 设置文档持久化：就绪后采纳已保存状态（主题/皮肤/字体/背景/玻璃），本地旧值自动迁移。
   const scopeService = ctx.get('settingsScope')

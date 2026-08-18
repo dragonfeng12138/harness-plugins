@@ -104,16 +104,18 @@ test('host half loads in this environment and registers via the settings service
   const calls = []
   host.apply({
     inject: (deps, callback) => {
-      calls.push(deps)
-      callback({
-        settings: {
-          register: (ns, schema) => {
-            const resolved = schema({ track: 'skin' })
-            assert.equal(resolved.track, 'skin')
-            assert.equal(resolved.glass, '60', 'schema must apply defaults')
+      if (deps && deps[0] === 'settings') {
+        calls.push(deps)
+        callback({
+          settings: {
+            register: (ns, schema) => {
+              const resolved = schema({ track: 'skin' })
+              assert.equal(resolved.track, 'skin')
+              assert.equal(resolved.glass, '60', 'schema must apply defaults')
+            },
           },
-        },
-      })
+        })
+      }
     },
     get: () => undefined,
   })
@@ -126,11 +128,22 @@ test('host background RPC saves a file, reads it back, and rejects foreign paths
   const host = await import('../../lib/index.js')
   let captured = null
   host.apply({
-    inject: () => {},
+    inject: (deps, callback) => {
+      if (deps && deps[0] === 'connection') {
+        callback({
+          connection: {
+            rpc: {
+              handle: (channel, handler, options) => {
+                captured = { channel, handler, options }
+                return () => Promise.resolve()
+              },
+            },
+          },
+        })
+      }
+    },
     effect: (fn) => fn(),
-    get: (name) => name === 'connection'
-      ? { rpc: { handle: (channel, handler, options) => { captured = { channel, handler, options }; return () => Promise.resolve() } } }
-      : undefined,
+    get: () => undefined,
   })
   assert.ok(captured !== null, 'host must register the RPC channel when connection is available')
   assert.equal(captured.channel, '/dsh-skins')
@@ -171,6 +184,7 @@ test('client persists via the host settings scope with a localStorage fallback',
   assert.ok(output.includes('persistReady'), 'client must gate host writes on readiness')
   assert.ok(output.includes('getPersist') && output.includes('setPersist'), 'client must route all state through the persist layer')
   assert.ok(output.includes('saveBackgroundFile') && output.includes('readBackgroundFile'), 'client must save/read background files through host RPC')
+  assert.ok(output.includes("ctx.inject(['connection']"), 'client must wait for the connection service via inject')
   assert.ok(output.includes('BACKDROPS[0]'), 'client must fall back to the first preset when the file is missing')
   assert.ok(!output.includes("type: 'file', name: file.name, data:"), 'the settings value must never embed image data')
 })
