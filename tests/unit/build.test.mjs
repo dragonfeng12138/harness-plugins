@@ -91,6 +91,8 @@ test('host half registers a durable settings namespace without external imports'
   assert.ok(!/(from '@|from ")/.test(host), 'host must not import external packages (junction real-path resolution breaks them)')
   assert.ok(host.includes('createRequire('), 'host must anchor-load schemastery from the profile node_modules')
   assert.ok(host.includes('settings.register('), 'host must register the namespace via the settings service')
+  assert.ok(host.includes("rpc.handle('/dsh-skins'"), 'host must register the background file RPC channel')
+  assert.ok(host.includes('saveBackground') && host.includes('readBackground'), 'host must expose save/read endpoints')
   for (const field of ['track', 'themeId', 'skinId', 'fontBody', 'fontCode', 'backdrop', 'glass']) {
     assert.ok(host.includes(field), `host schema must cover the persisted field ${field}`)
   }
@@ -113,10 +115,52 @@ test('host half loads in this environment and registers via the settings service
         },
       })
     },
+    get: () => undefined,
   })
   if (calls.length > 0) {
     assert.deepEqual(calls, [['settings']], 'host must inject the settings service')
   }
+})
+
+test('host background RPC saves a file, reads it back, and rejects foreign paths', async () => {
+  const host = await import('../../lib/index.js')
+  let captured = null
+  host.apply({
+    inject: () => {},
+    effect: (fn) => fn(),
+    get: (name) => name === 'connection'
+      ? { rpc: { handle: (channel, handler, options) => { captured = { channel, handler, options }; return () => Promise.resolve() } } }
+      : undefined,
+  })
+  assert.ok(captured !== null, 'host must register the RPC channel when connection is available')
+  assert.equal(captured.channel, '/dsh-skins')
+  assert.equal(captured.options.authority, 'loopback')
+
+  const save = await captured.handler('saveBackground', { name: 'probe.png', data: 'data:image/png;base64,' + Buffer.from('png-probe').toString('base64') })
+  assert.equal(save.ok, true, 'save must succeed')
+  assert.equal(typeof save.value.path, 'string')
+
+  const read = await captured.handler('readBackground', { path: save.value.path })
+  assert.equal(read.ok, true)
+  assert.ok(String(read.value.data).startsWith('data:image/png;base64,'), 'read must return a data URL')
+  assert.ok(String(read.value.data).includes(Buffer.from('png-probe').toString('base64')), 'read must return the saved bytes')
+
+  const missing = await captured.handler('readBackground', { path: 'C:/definitely/not/there.png' })
+  assert.equal(missing.ok, true)
+  assert.equal(missing.value, null, 'missing file must resolve to null')
+
+  const evil = await captured.handler('readBackground', { path: 'C:/Windows/win.ini' })
+  assert.equal(evil.value, null, 'paths outside the plugin dir must be rejected')
+
+  const badPayload = await captured.handler('saveBackground', { name: 'x', data: 'data:text/plain;base64,AA==' })
+  assert.equal(badPayload.ok, false, 'non-image payloads must be rejected')
+
+  const { unlinkSync, rmdirSync } = await import('node:fs')
+  const { dirname } = await import('node:path')
+  try {
+    unlinkSync(save.value.path)
+    rmdirSync(dirname(save.value.path))
+  } catch {}
 })
 
 test('client persists via the host settings scope with a localStorage fallback', async () => {
@@ -126,4 +170,7 @@ test('client persists via the host settings scope with a localStorage fallback',
   assert.ok(output.includes('adoptHostState'), 'client must adopt saved host state on ready')
   assert.ok(output.includes('persistReady'), 'client must gate host writes on readiness')
   assert.ok(output.includes('getPersist') && output.includes('setPersist'), 'client must route all state through the persist layer')
+  assert.ok(output.includes('saveBackgroundFile') && output.includes('readBackgroundFile'), 'client must save/read background files through host RPC')
+  assert.ok(output.includes('BACKDROPS[0]'), 'client must fall back to the first preset when the file is missing')
+  assert.ok(!output.includes("type: 'file', name: file.name, data:"), 'the settings value must never embed image data')
 })

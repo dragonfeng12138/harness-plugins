@@ -271,7 +271,10 @@ const BACKDROPS = [
   { id: 'night-city', name: '夜城霓虹', uri: presetNightCity() },
 ]
 
-/** 解析持久化的背景值：预设 id | url:<raw> | file 的 JSON 串；无效返回 null。 */
+/** `/dsh-skins` RPC 客户端（host 存取背景图文件）；不可用时本地图片降级。 */
+let rpcClient = null
+
+/** 解析持久化的背景值：预设 id | url:<raw> | file 的 JSON 串（存路径，不存图像数据）；无效返回 null。 */
 function parseBackdrop(value) {
   if (typeof value !== 'string' || value === '') return null
   if (value.startsWith('url:')) {
@@ -282,14 +285,39 @@ function parseBackdrop(value) {
   if (value.startsWith('{')) {
     try {
       const parsed = JSON.parse(value)
-      if (parsed && parsed.type === 'file' && typeof parsed.data === 'string' && parsed.data.startsWith('data:image/')) {
-        return { kind: 'file', name: typeof parsed.name === 'string' ? parsed.name : '', data: parsed.data }
+      // 新格式只存路径；旧格式（内嵌 data）视为无效，触发首个预设回退。
+      if (parsed && parsed.type === 'file' && typeof parsed.path === 'string' && parsed.path !== '') {
+        return { kind: 'file', name: typeof parsed.name === 'string' ? parsed.name : '', path: parsed.path }
       }
     } catch {}
     return null
   }
   const preset = BACKDROPS.find((item) => item.id === value)
   return preset ? { kind: 'preset', id: preset.id } : null
+}
+
+/** 让 host 把图片落盘，返回 { path, name }；失败返回 null。 */
+async function saveBackgroundFile(name, dataUrl) {
+  if (rpcClient === null) return null
+  try {
+    const result = await rpcClient.call('/dsh-skins', 'saveBackground', { name, data: dataUrl })
+    if (result && result.ok === true && result.value && typeof result.value.path === 'string') {
+      return { path: result.value.path, name: String(result.value.name || name) }
+    }
+  } catch {}
+  return null
+}
+
+/** 按路径读回图片 data URL；文件不存在/读失败返回 null。 */
+async function readBackgroundFile(path) {
+  if (rpcClient === null) return null
+  try {
+    const result = await rpcClient.call('/dsh-skins', 'readBackground', { path })
+    if (result && result.ok === true && result.value && typeof result.value.data === 'string') {
+      return result.value.data
+    }
+  } catch {}
+  return null
 }
 
 function escapeCssUrl(raw) {
@@ -319,24 +347,58 @@ function setGlassOpacity(value) {
   notify()
 }
 
-/** 背景层：全屏工作区背景 + 可调玻璃。仅当主题轨道激活时生效；皮肤轨道清退。 */
-function applyBackdropLayer() {
+/** 背景层：全屏工作区背景 + 可调玻璃。仅当主题轨道激活时生效；皮肤轨道清退。
+ *  文件背景按路径读图；文件缺失/读失败 → 回退第一个预设并自愈持久化值。 */
+async function applyBackdropLayer() {
   if (activeTrack !== 'theme') {
     removeBackdropAttr()
     return
   }
-  const parsed = parseBackdrop(getPersist('backdrop'))
-  if (parsed === null) {
+  const stored = getPersist('backdrop')
+  if (stored === '') {
     removeBackdropAttr()
     return
   }
-  let raw = ''
+  let parsed = parseBackdrop(stored)
+  if (parsed === null) {
+    // 无效/旧格式值：回退第一个预设并自愈。
+    const fallback = BACKDROPS[0]
+    if (fallback !== undefined) {
+      setPersist('backdrop', fallback.id)
+      parsed = { kind: 'preset', id: fallback.id }
+    } else {
+      removeBackdropAttr()
+      return
+    }
+  }
+  let raw = null
   if (parsed.kind === 'preset') {
     const preset = BACKDROPS.find((item) => item.id === parsed.id)
-    if (preset === undefined) { removeBackdropAttr(); return }
-    raw = preset.uri
-  } else if (parsed.kind === 'url') raw = parsed.url
-  else raw = parsed.data
+    raw = preset === undefined ? null : preset.uri
+  } else if (parsed.kind === 'url') {
+    raw = parsed.url
+  } else {
+    raw = await readBackgroundFile(parsed.path)
+    let fallbackId = null
+    if (raw === null) {
+      // 文件不存在或读失败 → 默认使用第一个背景图像并自愈持久化值。
+      const fallback = BACKDROPS[0]
+      if (fallback === undefined) {
+        removeBackdropAttr()
+        return
+      }
+      setPersist('backdrop', fallback.id)
+      raw = fallback.uri
+      fallbackId = fallback.id
+    }
+    // 读取期间用户又改了背景 → 放弃本次应用。
+    const current = getPersist('backdrop')
+    if (current !== stored && current !== fallbackId) return
+  }
+  if (raw === null) {
+    removeBackdropAttr()
+    return
+  }
   // 玻璃色：取当前主题族各 token 的明/暗值，按滑杆透明度做 color-mix。
   const dark = document.body.hasAttribute('data-ds-dark-theme')
   const family = THEMES.find((item) => item.id === selectedThemeId)
@@ -657,9 +719,14 @@ function BackdropPanel() {
     if (file.size > 3500000) { setError('图片过大（>3.5MB），请压缩后重试或改用 URL'); return }
     const reader = new FileReader()
     reader.onerror = () => setError('读取文件失败')
-    reader.onload = () => {
-      const ok = setBackdrop(JSON.stringify({ type: 'file', name: file.name, data: String(reader.result || '') }))
-      setError(ok ? '' : '保存失败：本地存储容量不足，请改用 URL')
+    reader.onload = async () => {
+      const saved = await saveBackgroundFile(file.name, String(reader.result || ''))
+      if (saved === null) {
+        setError('保存图片失败：当前环境不支持本地文件，请改用 URL 或预设')
+        return
+      }
+      const ok = setBackdrop(JSON.stringify({ type: 'file', name: saved.name, path: saved.path }))
+      setError(ok ? '' : '保存失败：本地存储容量不足')
     }
     reader.readAsDataURL(file)
   }
@@ -682,11 +749,10 @@ function BackdropPanel() {
     id !== 'none' && id !== 'custom' ? React.createElement('span', { className: 'dsk-backdrop-thumb-label' }, label) : null,
   )
 
-  const customStyle = parsed && parsed.kind === 'file'
-    ? { backgroundImage: `url("${escapeCssUrl(parsed.data)}")` }
-    : parsed && parsed.kind === 'url'
-      ? { backgroundImage: `url("${escapeCssUrl(parsed.url)}")` }
-      : {}
+  // 文件背景只存路径：缩略图不预览（URL/预设才可内联预览）。
+  const customStyle = parsed && parsed.kind === 'url'
+    ? { backgroundImage: `url("${escapeCssUrl(parsed.url)}")` }
+    : {}
 
   return React.createElement('div', { className: 'dsk-backdrop' },
     React.createElement('div', { className: 'dsk-backdrop-title' }, '背景图像'),
@@ -841,6 +907,12 @@ function apply(ctx) {
 
   // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
   ctx.on('theme/change', () => applyBackdropLayer())
+
+  // 背景图文件存取通道（host RPC）；不可用时本地图片功能降级。
+  const connection = ctx.get('connection')
+  if (connection !== undefined && connection.rpc !== undefined) {
+    rpcClient = connection.rpc
+  }
 
   // host 设置文档持久化：就绪后采纳已保存状态（主题/皮肤/字体/背景/玻璃），本地旧值自动迁移。
   const scopeService = ctx.get('settingsScope')
