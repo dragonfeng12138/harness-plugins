@@ -37,6 +37,8 @@
 
 ## 安装
 
+> 开发者注意：本机开发走**源码直挂（A 通道）**，改完 `node build.mjs` 刷新即生效；A/B 两种安装通道的切换步骤与坑位见 [DEVELOPMENT.md](DEVELOPMENT.md)。
+
 ### 官方命令（npm 已发布，推荐）
 
 包已发布到 npm（`dsh-skins@0.2.0`），用 DSH 官方插件命令一键安装：
