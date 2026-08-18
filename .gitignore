@@ -2,3 +2,6 @@
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# npm 本地缓存（沙箱重定向产物）
+.npm-cache/

@@ -35,7 +35,21 @@
 
 全部选择（主题 / 皮肤 / 字体 / 背景 / 毛玻璃透明度）经 DSH **host 设置文档**持久化（`dsh-skins` 命名空间），跨后端重启与端口变化存活——重启应用或重新打开网页都会加载上次保存的主题。localStorage 仅作兜底，升级后旧选择自动迁移写入。停用/移除插件时全部视觉副作用（token 层、皮肤 CSS、字体/背景/玻璃层）自动清理。
 
-## 安装（手动渠道）
+## 安装
+
+### 官方命令（npm 已发布，推荐）
+
+包已发布到 npm（`dsh-skins@0.2.0`），用 DSH 官方插件命令一键安装：
+
+```powershell
+dsh plugin --profile web add dsh-skins
+```
+
+（桌面内置后端可用完整路径：`node <DSH 安装目录>\lib\bin.js plugin --profile web add dsh-skins`。）
+
+> 发布不足 24 小时的包若被 pnpm 以版本年龄拒绝，把 `dsh-skins` 加入 `profiles/web/pnpm-workspace.yaml` 的 `minimumReleaseAgeExclude` 即可。
+
+### 手动渠道（离线/自建环境）
 
 1. 构建（在包目录内）：
 
