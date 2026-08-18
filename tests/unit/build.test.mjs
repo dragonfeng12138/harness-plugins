@@ -168,6 +168,20 @@ test('host background RPC saves a file, reads it back, and rejects foreign paths
   const badPayload = await captured.handler('saveBackground', { name: 'x', data: 'data:text/plain;base64,AA==' })
   assert.equal(badPayload.ok, false, 'non-image payloads must be rejected')
 
+  // 内容寻址：同一张图重复保存复用同一文件
+  const save2 = await captured.handler('saveBackground', { name: 'probe-again.png', data: 'data:image/png;base64,' + Buffer.from('png-probe').toString('base64') })
+  assert.equal(save2.ok, true)
+  assert.equal(save2.value.path, save.value.path, 'same content must reuse the same file')
+
+  // 删除：文件消失；越权路径拒绝
+  const del = await captured.handler('deleteBackground', { path: save.value.path })
+  assert.equal(del.ok, true, 'delete must succeed')
+  const readAfter = await captured.handler('readBackground', { path: save.value.path })
+  assert.equal(readAfter.ok, true)
+  assert.equal(readAfter.value, null, 'deleted file must be gone')
+  const delEvil = await captured.handler('deleteBackground', { path: 'C:/Windows/win.ini' })
+  assert.equal(delEvil.ok, false, 'foreign delete must be rejected')
+
   const { unlinkSync, rmdirSync } = await import('node:fs')
   const { dirname } = await import('node:path')
   try {
@@ -184,6 +198,10 @@ test('client persists via the host settings scope with a localStorage fallback',
   assert.ok(output.includes('persistReady'), 'client must gate host writes on readiness')
   assert.ok(output.includes('getPersist') && output.includes('setPersist'), 'client must route all state through the persist layer')
   assert.ok(output.includes('saveBackgroundFile') && output.includes('readBackgroundFile'), 'client must save/read background files through host RPC')
+  assert.ok(output.includes('deleteBackgroundFile') && output.includes('removeBackgroundEntry'), 'client must delete backgrounds and their files')
+  assert.ok(output.includes('dsh-skins-backgrounds-v1'), 'client must persist the user background registry')
+  assert.ok(output.includes('addUrlBackground') && output.includes('addFileBackground'), 'client must register URL/file backgrounds')
+  assert.ok(output.includes('删除此图'), 'delete must ask for confirmation')
   assert.ok(output.includes("ctx.inject(['connection']"), 'client must wait for the connection service via inject')
   assert.ok(output.includes('BACKDROPS[0]'), 'client must fall back to the first preset when the file is missing')
   assert.ok(!output.includes("type: 'file', name: file.name, data:"), 'the settings value must never embed image data')
