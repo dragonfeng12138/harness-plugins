@@ -26,6 +26,7 @@ const STORAGE_FONT_CODE = 'dsh-skins-font-code-v1'
 const STORAGE_BACKDROP = 'dsh-skins-backdrop-v1'
 const STORAGE_GLASS = 'dsh-skins-glass-v1'
 const STORAGE_BACKGROUNDS = 'dsh-skins-backgrounds-v1'
+const STORAGE_THINK_HEIGHT = 'dsh-skins-think-height-v1'
 const FONT_AUTO = 'auto'
 
 function readStored(key, fallback) {
@@ -52,6 +53,7 @@ const PERSIST_FIELDS = {
   fontCode: { key: STORAGE_FONT_CODE, def: 'auto' },
   backdrop: { key: STORAGE_BACKDROP, def: '' },
   glass: { key: STORAGE_GLASS, def: '60' },
+  thinkHeight: { key: STORAGE_THINK_HEIGHT, def: '320' },
   backgrounds: { key: STORAGE_BACKGROUNDS, def: '[]' },
 }
 const saved = {}
@@ -98,6 +100,7 @@ function adoptHostState(snapshot) {
     restoreSelection()
     applyFontLayer()
     applyBackdropLayer()
+    applyThinkHeight()
   }
 }
 
@@ -421,6 +424,25 @@ function setGlassOpacity(value) {
   notify()
 }
 
+/** 读取思考面板展开高度（px，120-600，默认 320）。 */
+function thinkHeightValue() {
+  const stored = parseInt(getPersist('thinkHeight'), 10)
+  if (!Number.isFinite(stored)) return 320
+  return Math.min(600, Math.max(120, stored))
+}
+
+/** 设置思考面板展开高度并即时生效。 */
+function setThinkHeight(value) {
+  setPersist('thinkHeight', value)
+  applyThinkHeight()
+  notify()
+}
+
+/** 思考面板滚动容器高度：body 上的 CSS 变量，插件卸载时移除。 */
+function applyThinkHeight() {
+  document.body.style.setProperty('--dsk-think-max-height', thinkHeightValue() + 'px')
+}
+
 /** 背景层：全屏工作区背景 + 可调玻璃。仅当主题轨道激活时生效；皮肤轨道清退。
  *  文件背景按路径读图；文件缺失/读失败 → 回退第一个预设并自愈持久化值。 */
 async function applyBackdropLayer() {
@@ -625,6 +647,12 @@ function openFontView() {
   notify()
 }
 
+/** 切到界面视图：纯 UI 切换。 */
+function openUiView() {
+  activeView = 'ui'
+  notify()
+}
+
 /** apply 时恢复持久化选择；无效 id 回退，首次运行默认第一族。 */
 function restoreSelection() {
   const track = getPersist('track')
@@ -654,6 +682,7 @@ function teardown() {
   clearSkin()
   teardownFontLayer()
   removeBackdropAttr()
+  document.body.style.removeProperty('--dsk-think-max-height')
 }
 
 // ---- 画廊 UI 样式（自持，随插件卸载移除） ----
@@ -725,6 +754,12 @@ body[data-dsh-skins-backdrop] [id=root] {
   -webkit-backdrop-filter: blur(7px);
   backdrop-filter: blur(7px);
 }
+/* 思考面板：展开内容为滚动容器，高度由 --dsk-think-max-height 控制（默认 320px）。 */
+[data-variant="think"] > [data-open] > :not([data-disclosure-row]) {
+  max-height: var(--dsk-think-max-height, 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 `
 
 // ---- 字体设置面板（settings.section 页签内的字体视图） ----
@@ -771,6 +806,23 @@ function FontPanel() {
     React.createElement('div', { className: 'dsk-font-toolbar' },
       React.createElement('button', { type: 'button', className: 'dsk-btn', onClick: () => setTick((value) => value + 1) }, '重新检测字体'),
       React.createElement('span', { className: 'dsk-count' }, `正文 ${bodyFonts.length} 款 · 代码 ${codeFonts.length} 款`),
+    ),
+  )
+}
+
+// ---- 界面设置面板（独立「界面」页签）：思考面板展开高度 ----
+function UiPanel() {
+  return React.createElement('div', { className: 'dsk-root' },
+    React.createElement('div', { className: 'dsk-hint' }, '思考（Think）展开内容为滚动容器，高度可调；拖动滑杆即时预览。'),
+    React.createElement('label', { className: 'dsk-font-row' },
+      React.createElement('span', { className: 'dsk-font-label' }, '思考面板高度'),
+      React.createElement('div', { className: 'dsk-glass-row' },
+        React.createElement('input', {
+          type: 'range', min: '120', max: '600', step: '10', value: String(thinkHeightValue()), 'aria-label': '思考面板高度',
+          onChange: (event) => setThinkHeight(event.target.value),
+        }),
+        React.createElement('span', { className: 'dsk-count' }, thinkHeightValue() + 'px'),
+      ),
     ),
   )
 }
@@ -959,9 +1011,10 @@ function Gallery() {
     tab('theme', '主题', openThemeTrack),
     tab('skin', '皮肤', openSkinTrack),
     tab('font', '字体', openFontView),
+    tab('ui', '界面', openUiView),
   )
 
-  const body = activeView === 'skin' ? renderSkinBody() : activeView === 'font' ? React.createElement(FontPanel) : renderThemeBody()
+  const body = activeView === 'skin' ? renderSkinBody() : activeView === 'font' ? React.createElement(FontPanel) : activeView === 'ui' ? React.createElement(UiPanel) : renderThemeBody()
 
   function renderThemeBody() {
     return React.createElement('div', { className: 'dsk-root' },
@@ -1026,7 +1079,7 @@ function Gallery() {
   return React.createElement('div', { className: 'dsk-wrap' },
     React.createElement('div', { className: 'dsk-heading' },
       React.createElement('div', { className: 'dsk-title' }, 'ACG 外观'),
-      React.createElement('div', { className: 'dsk-count' }, activeView === 'skin' ? SKINS.length + ' 皮肤' : activeView === 'font' ? '独立设置' : THEMES.length + ' 主题'),
+      React.createElement('div', { className: 'dsk-count' }, activeView === 'skin' ? SKINS.length + ' 皮肤' : activeView === 'font' ? '独立设置' : activeView === 'ui' ? '界面设置' : THEMES.length + ' 主题'),
     ),
     tabs,
     body,
@@ -1043,6 +1096,7 @@ function apply(ctx) {
   // 恢复持久化选择（首次运行默认第一族）与字体覆盖层。
   restoreSelection()
   applyFontLayer()
+  applyThinkHeight()
 
   // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
   ctx.on('theme/change', () => applyBackdropLayer())

@@ -36,6 +36,7 @@ const Schema = z === null ? null : z.object({
   fontCode: z.string().default('auto'),
   backdrop: z.string().default(''),
   glass: z.string().default('60'),
+  thinkHeight: z.string().default('320'),
   backgrounds: z.string().default('[]'),
 })
 
