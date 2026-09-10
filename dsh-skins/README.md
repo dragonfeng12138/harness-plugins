@@ -37,21 +37,44 @@
 
 ## 安装
 
-> 开发者注意：本机开发走**源码直挂（A 通道）**，改完 `node build.mjs` 刷新即生效；A/B 两种安装通道的切换步骤与坑位见 [DEVELOPMENT.md](DEVELOPMENT.md)。
+本包**不发布 npm**，推荐直接用仓库源码挂进 DSH：改完代码 `node build.mjs` 重建、刷新页面即生效，无需发包或重装。历史 A/B 通道的切换步骤与坑位见 [DEVELOPMENT.md](DEVELOPMENT.md)。
 
-### 官方命令（npm 已发布，推荐）
+### 源码直挂（推荐）
 
-包已发布到 npm（`dsh-skins@0.2.0`），用 DSH 官方插件命令一键安装：
+1. 链接到共享 node_modules（目录链接，**不要复制文件**——复制后改源码不生效）：
+
+   ```powershell
+   $link = "$env:USERPROFILE\.dsh\profiles\node_modules\dsh-skins"
+   New-Item -ItemType Directory -Force -Path (Split-Path $link) | Out-Null
+   if (Test-Path $link) { [System.IO.Directory]::Delete($link, $false) }   # 只删链接，不动源码
+   New-Item -ItemType Junction -Path $link -Target "<仓库路径>\dsh-skins"
+   ```
+
+   macOS / Linux：`ln -sfn <仓库路径>/dsh-skins ~/.dsh/profiles/node_modules/dsh-skins`
+
+2. 在 `$env:USERPROFILE\.dsh\profiles\web\cordis.patch.yml` 追加（如已存在则跳过）：
+
+   ```yaml
+   - insert:
+       - id: dsh-skins
+         name: dsh-skins
+   ```
+
+3. **重启 DSH**（host 半段随进程加载），然后**刷新网页**；打开 **设置 →「ACG 外观」** 页签。
+
+4. 日常改码：`node build.mjs` 后**硬刷新页面**；只有改了 `lib/index.js`（host 半段）才需要重启 DSH。
+
+### npm 官方命令（已停用）
+
+包曾在 npm 发布（`dsh-skins@0.2.0`），**已不再维护**：npm 上的版本仍是旧写法，在新版 DSH 下客户端半段不会加载（设置里看不到「ACG 外观」）。请改用上面的源码直挂；下面命令仅保留给历史环境参考。
 
 ```powershell
 dsh plugin --profile web add dsh-skins
 ```
 
-（桌面内置后端可用完整路径：`node <DSH 安装目录>\lib\bin.js plugin --profile web add dsh-skins`。）
+### 复制文件（离线 / 无法建链接时）
 
-> 发布不足 24 小时的包若被 pnpm 以版本年龄拒绝，把 `dsh-skins` 加入 `profiles/web/pnpm-workspace.yaml` 的 `minimumReleaseAgeExclude` 即可。
-
-### 手动渠道（离线/自建环境）
+> 该方式把构建产物复制进 profile，**改源码后必须重新 `node build.mjs` 并再次复制**，否则跑的还是旧代码。
 
 1. 构建（在包目录内）：
 
@@ -83,7 +106,7 @@ dsh plugin --profile web add dsh-skins
 
 5. 打开 **设置 →「ACG 外观」页签**（紧随「常规」之后），在「主题 / 皮肤 / 字体」三个页签间挑选；「DSH 默认」卡片可一键恢复，字体页签可单独选择本机字体，主题页签底部可设置背景图像。
 
-选择经 localStorage 持久化，刷新页面自动恢复。插件停用/移除时，token override 层、皮肤 style 与 body 属性全部自动清理。
+选择经 DSH **host 设置文档**持久化（见上文「持久化」），重启应用或重开网页都会恢复。插件停用/移除时，token override 层、皮肤 style 与 body 属性全部自动清理。
 
 ## 与 dsh-theme-gallery 共存
 
