@@ -1095,56 +1095,68 @@ function Gallery() {
 
 // ---- 插件客户端入口 ----
 function apply(ctx) {
-  const theme = ctx.get('theme')
-  const slots = ctx.get('slots')
-  if (theme === undefined || slots === undefined) return
-  themeService = theme
+  // slots 是硬需求：用可选注入等待它就绪（而不是 ctx.get 后静默 return），
+  // 这样客户端服务可见性差异不会让整个插件无声消失。
+  ctx.inject(['slots'], (slotsCtx) => {
+    const slots = slotsCtx.slots
+    const theme = slotsCtx.get('theme')
+    themeService = theme === undefined ? null : theme
 
-  // 恢复持久化选择（首次运行默认第一族）与字体覆盖层。
-  restoreSelection()
-  applyFontLayer()
-  applyThinkHeight()
+    // 设置页签最先注册：后续初始化即使抛错，页签也不会跟着消失。
+    slots.inject('settings.section', () => slots.register(
+      { name: 'settings.section', id: 'dsh-skins', order: 5, label: 'ACG 外观' },
+      Gallery,
+    ))
 
-  // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
-  ctx.on('theme/change', () => applyBackdropLayer())
-
-  // 背景图文件存取通道（host RPC）：connection 服务就绪后注入；缺失时本地图片降级。
-  ctx.inject(['connection'], (connectionCtx) => {
-    rpcClient = connectionCtx.connection.rpc
-    applyBackdropLayer()
-  })
-
-  // host 设置文档持久化：就绪后采纳已保存状态（主题/皮肤/字体/背景/玻璃），本地旧值自动迁移。
-  const scopeService = ctx.get('settingsScope')
-  if (scopeService !== undefined) {
-    try {
-      persistScope = scopeService.bind({ namespace: 'dsh-skins' })
-      const sync = () => {
-        const snapshot = persistScope.getSnapshot()
-        if (snapshot.status === 'ready') adoptHostState(snapshot)
+    // 逐段初始化：任一段失败只记录，不连累页签与其余功能。
+    const runInitStep = (label, fn) => {
+      try {
+        fn()
+      } catch (error) {
+        console.error(`[dsh-skins] client init failed: ${label}`, error)
       }
-      ctx.effect(() => persistScope.subscribe(sync))
-      sync()
-    } catch {}
-  }
+    }
 
-  // 插件停用：回收 override 层、皮肤 style 与 body 属性。
-  ctx.effect(() => () => teardown())
+    // 恢复持久化选择（首次运行默认第一族）与字体覆盖层。
+    runInitStep('restoreSelection', restoreSelection)
+    runInitStep('applyFontLayer', applyFontLayer)
+    runInitStep('applyThinkHeight', applyThinkHeight)
 
-  // 画廊 UI 样式：自持 style 节点，随插件卸载移除。
-  ctx.effect(() => {
-    const tag = document.createElement('style')
-    tag.setAttribute('data-dsh-skins-ui', '')
-    tag.textContent = UI_CSS
-    document.head.appendChild(tag)
-    return () => tag.remove()
+    // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
+    slotsCtx.on('theme/change', () => applyBackdropLayer())
+
+    // 背景图文件存取通道（host RPC）：connection 服务就绪后注入；缺失时本地图片降级。
+    slotsCtx.inject(['connection'], (connectionCtx) => {
+      rpcClient = connectionCtx.connection.rpc
+      applyBackdropLayer()
+    })
+
+    // host 设置文档持久化：就绪后采纳已保存状态（主题/皮肤/字体/背景/玻璃），本地旧值自动迁移。
+    const scopeService = slotsCtx.get('settingsScope')
+    if (scopeService !== undefined) {
+      try {
+        persistScope = scopeService.bind({ namespace: 'dsh-skins' })
+        const sync = () => {
+          const snapshot = persistScope.getSnapshot()
+          if (snapshot.status === 'ready') adoptHostState(snapshot)
+        }
+        slotsCtx.effect(() => persistScope.subscribe(sync))
+        sync()
+      } catch {}
+    }
+
+    // 插件停用：回收 override 层、皮肤 style 与 body 属性。
+    slotsCtx.effect(() => () => teardown())
+
+    // 画廊 UI 样式：自持 style 节点，随插件卸载移除。
+    slotsCtx.effect(() => {
+      const tag = document.createElement('style')
+      tag.setAttribute('data-dsh-skins-ui', '')
+      tag.textContent = UI_CSS
+      document.head.appendChild(tag)
+      return () => tag.remove()
+    })
   })
-
-  // 设置面板：独立「ACG 外观」页签（紧随「常规」之后，不占用通用设置行）。
-  slots.inject('settings.section', () => slots.register(
-    { name: 'settings.section', id: 'dsh-skins', order: 5, label: 'ACG 外观' },
-    Gallery,
-  ))
 }
 
 		module.exports = { apply };
