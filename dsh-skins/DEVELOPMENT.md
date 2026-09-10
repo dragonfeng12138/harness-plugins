@@ -64,6 +64,7 @@ node <DSH安装目录>\lib\bin.js plugin --profile web add dsh-skins
 | 客户端 bundle 注册面 `window.__ModuleLoader__.load({id, factory})` | `lib/client.js` | 同上：取回 `/plugins/??dsh-skins/client.js` 后必须导出一份 factory |
 | 平台 seed 词（`require()` 白名单） | `dsh-web-frontend` dist 的 `staticModules` | 本包只 `require('react')`；新增 require 前先确认它在 seed 词里（react / react-dom / cordis / dsh-client-store / dsh-client-ui-slots / dsh-client-ui-primitives / dsh-client-ui-dockkit） |
 | 主题服务 `theme.overrideTokens(source, {light,dark})` + `theme/change` | `@deepseek-ai/dsh-client-ui-theme` | token 名须在 `exportInspectTokens()` 目录内；值必须是 `{light,dark}` 双套（裸字符串会抛错） |
+| 基础 token 定义（`--dsw-alias-*` / `--dsw-specific-*`） | `@deepseek-ai/dsh-client-ui-theme` **`lib/client.js`** | 主题 CSS 由该插件运行时注入（`installThemeStyles` 的 `design_platform_css_default`），**不在 `dsh-web-frontend/dist` 产物里**——扫产物会漏判成「token 缺失」；每个 token 必须在 `body{...}` 与 `body[data-ds-dark-theme]{...}` 各有一处定义。`node build.mjs` 已内置该校验（见下） |
 | `settings.section` 槽位（`id` / `order` / `label`） | `@deepseek-ai/dsh-client-ui-settings-general` | 槽位由设置外壳声明；`label` 字符串与函数都兼容（`resolveSlotLabel`）；`order` 参与 list 排序 |
 | 客户端设置命名空间 `settingsScope.bind({namespace})` | `@deepseek-ai/dsh-client-ui-settings` | 快照 `status === 'ready'` 后才采纳 host 值 |
 | host 设置注册 `settings.register(ns, schema)` | `@deepseek-ai/dsh-settings` | 命名空间须为小写连字符 id |
@@ -71,3 +72,12 @@ node <DSH安装目录>\lib\bin.js plugin --profile web add dsh-skins
 | DOM 钩子 `body[data-ds-dark-theme]`、`#root`、`[data-variant="think"] > [data-open]` | `dsh-web-frontend` / `@deepseek-ai/dsh-client-ui-chat` | 皮肤与思考面板高度选择器依赖它们；改动会让皮肤／滚动容器静默失效 |
 
 **`dsh.client.inject` 与 npm 无关**：`inject` 里列的是**浏览器侧包名**，不是 npm 依赖。`@deepseek-ai/dsh-client-ui-slots` 在 0.1.5 是前端预置的虚拟模块（seed 词），运行时并不存在对应 node_modules——所以它只出现在 `inject` 里，**不要写进 `peerDependencies`**，否则包管理器会去 npm 解析一个与运行时无关的旧版本。
+
+### 构建期玻璃层校验（build.mjs）
+
+`node build.mjs` / `node build.mjs --check` 会校验 `GLASS_TOKENS`（毛玻璃取色白名单）：
+
+1. 每个 token 必须在**所有** `themes/*.json` 里有 `{light,dark}` 值——漏了会静默用源码里的内置回退色，玻璃色与主题族脱节；
+2. 每个 token 必须在 DSH 主题插件的注入 CSS 里有**双套定义**（`body{}` + `body[data-ds-dark-theme]{}`）——DSH 若把 token 改名或移出基础层，`--dsk-glass-*` 会落到空值，玻璃层直接看不见。
+
+任一不满足 → 构建**失败并指出 token 名**（`--check` 同样非零退出）；`DSH_HOME` 下找不到主题插件（未安装或新版本改了布局）时跳过第 2 项，不阻塞纯源码构建。

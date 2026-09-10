@@ -70,7 +70,7 @@
 
 3. **重启 DSH**（host 半段随进程加载），然后**刷新网页**；打开 **设置 →「ACG 外观」** 页签。
 
-4. 日常改码：`node build.mjs` 后**硬刷新页面**；只有改了 `lib/index.js`（host 半段）才需要重启 DSH。
+4. 日常改码：`node build.mjs` 后**硬刷新页面**；只有改了 `lib/index.js`（host 半段）才需要重启 DSH。构建会顺带校验毛玻璃 token 基线（主题族覆盖 + DSH 主题插件的双套定义），缺哪个直接报 token 名。详见 [DEVELOPMENT.md](DEVELOPMENT.md) 的「构建期玻璃层校验」。
 
 ### npm 官方命令（已停用）
 

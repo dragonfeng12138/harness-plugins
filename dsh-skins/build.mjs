@@ -10,6 +10,7 @@
  */
 import { readFile, writeFile, readdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -125,12 +126,49 @@ export async function build() {
     '});',
     '',
   ].join('\n')
-  return { output, themeCount: themes.length, skinCount: skins.length }
+  return { output, themeCount: themes.length, skinCount: skins.length, themes }
+}
+
+/** 读取 dsh-skins 客户端源码里玻璃层使用的 token 名单（GLASS_TOKENS）。 */
+async function glassTokens() {
+  const core = await readFile(join(root, 'src', 'client.core.js'), 'utf8')
+  const block = /const GLASS_TOKENS = \[([\s\S]*?)\]/.exec(core)
+  if (block === null) fail('src/client.core.js has no GLASS_TOKENS list')
+  return [...block[1].matchAll(/name:\s*'(--dsw-[a-z0-9-]+)'/g)].map((match) => match[1])
+}
+
+/**
+ * 校验玻璃层基线：GLASS_TOKENS 是显式白名单，token 必须在
+ *   1) 主题族 JSON 里给出颜色（否则运行时用内置回退值，与主题不搭）；
+ *   2) DSH 主题插件注入的双套定义里存在（否则变量为空、回退值也不生效）。
+ * DSH 侧找不到主题插件（未安装 / 未调研版本）时跳过，不阻塞源码构建。
+ */
+async function verifyGlassTokens(themes) {
+  const names = await glassTokens()
+  const missingInThemes = names.filter((name) => themes.some((theme) => theme.tokens[name] === undefined))
+  if (missingInThemes.length > 0) {
+    fail(`themes/*.json is missing glass tokens: ${missingInThemes.join(', ')}`)
+  }
+  const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh')
+  const themeClient = join(dshHome, 'profiles', 'node_modules', '@deepseek-ai', 'dsh-client-ui-theme', 'lib', 'client.js')
+  if (!existsSync(themeClient)) return names.length
+  const css = await readFile(themeClient, 'utf8')
+  const undefinedTokens = []
+  for (const name of names) {
+    const declaration = `${name}:`
+    const count = css.split(declaration).length - 1
+    if (count < 2) undefinedTokens.push(`${name} (${count} definition(s), need light+dark)`)
+  }
+  if (undefinedTokens.length > 0) {
+    fail(`DSH theme stylesheet has no double-mode definition for: ${undefinedTokens.join(', ')}`)
+  }
+  return names.length
 }
 
 async function main() {
   try {
-    const { output, themeCount, skinCount } = await build()
+    const { output, themeCount, skinCount, themes } = await build()
+    const glassCount = await verifyGlassTokens(themes)
     const target = join(root, 'lib', 'client.js')
     if (checkOnly) {
       const existing = existsSync(target) ? await readFile(target, 'utf8') : null
@@ -138,12 +176,12 @@ async function main() {
         console.error('[dsh-skins build] lib/client.js is out of date — run `node build.mjs`')
         process.exitCode = 1
       } else {
-        console.log(`[dsh-skins build] lib/client.js is up to date (${themeCount} themes, ${skinCount} skins)`)
+        console.log(`[dsh-skins build] lib/client.js is up to date (${themeCount} themes, ${skinCount} skins, ${glassCount} glass tokens)`)
       }
       return
     }
     await writeFile(target, output)
-    console.log(`[dsh-skins build] wrote lib/client.js (${themeCount} themes, ${skinCount} skins)`)
+    console.log(`[dsh-skins build] wrote lib/client.js (${themeCount} themes, ${skinCount} skins, ${glassCount} glass tokens)`)
   } catch (error) {
     console.error(error && error.isBuildError ? error.message : error)
     process.exitCode = 1
