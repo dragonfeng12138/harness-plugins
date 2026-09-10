@@ -5,3 +5,6 @@ Desktop.ini
 
 # npm 本地缓存（沙箱重定向产物）
 .npm-cache/
+
+# 搬入的独立 git 仓库（dsh-routing-suite + 其 injector/preset 子模块）
+dsh-routing-suite/
