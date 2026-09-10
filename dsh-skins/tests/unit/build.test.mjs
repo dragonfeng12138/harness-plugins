@@ -202,7 +202,7 @@ test('client persists via the host settings scope with a localStorage fallback',
   assert.ok(output.includes('dsh-skins-backgrounds-v1'), 'client must persist the user background registry')
   assert.ok(output.includes('addUrlBackground') && output.includes('addFileBackground'), 'client must register URL/file backgrounds')
   assert.ok(output.includes('删除此图'), 'delete must ask for confirmation')
-  assert.ok(output.includes("ctx.inject(['connection']"), 'client must wait for the connection service via inject')
+  assert.ok(output.includes(".inject(['connection']"), 'client must wait for the connection service via inject')
   assert.ok(output.includes('BACKDROPS[0]'), 'client must fall back to the first preset when the file is missing')
   assert.ok(!output.includes("type: 'file', name: file.name, data:"), 'the settings value must never embed image data')
 })

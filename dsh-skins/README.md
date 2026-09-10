@@ -35,6 +35,14 @@
 
 全部选择（主题 / 皮肤 / 字体 / 背景 / 毛玻璃透明度）经 DSH **host 设置文档**持久化（`dsh-skins` 命名空间），跨后端重启与端口变化存活——重启应用或重新打开网页都会加载上次保存的主题。localStorage 仅作兜底，升级后旧选择自动迁移写入。停用/移除插件时全部视觉副作用（token 层、皮肤 CSS、字体/背景/玻璃层）自动清理。
 
+### 兼容性
+
+对齐 **DSH 0.1.5-rc.1**（`@deepseek-ai/dsh-*` 0.1.5-rc.1、cordis 4.0.2、schemastery 3.18.2）。用到的都是随 DSH 版本演进的公开契约（`dsh.client` 清单、`window.__ModuleLoader__` 注册面、`theme.overrideTokens`、`settings.section` 槽位、`settingsScope`、host RPC 通道），升级 DSH 后请按 [DEVELOPMENT.md](DEVELOPMENT.md) 的「DSH 版本对表」逐项复验。
+
+- 客户端 bundle 只 `require('react')`，其余依赖全走平台 seed 词或 `ctx` 服务——新增 `require` 前先确认它在 seed 词内，否则运行时抛 `require(...) missed the module table`；
+- `@deepseek-ai/dsh-client-ui-slots` 是前端预置的虚拟模块，只出现在 `dsh.client.inject` 里，不是 npm 依赖；
+- host 半段零外部 import（junction 真实路径解析限制），schema 经 `createRequire` 锚定 `profiles/node_modules`。
+
 ## 安装
 
 本包**不发布 npm**，推荐直接用仓库源码挂进 DSH：改完代码 `node build.mjs` 重建、刷新页面即生效，无需发包或重装。历史 A/B 通道的切换步骤与坑位见 [DEVELOPMENT.md](DEVELOPMENT.md)。
