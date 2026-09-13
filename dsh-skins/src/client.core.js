@@ -1092,8 +1092,6 @@ function apply(ctx) {
   // 这样客户端服务可见性差异不会让整个插件无声消失。
   ctx.inject(['slots'], (slotsCtx) => {
     const slots = slotsCtx.slots
-    const theme = slotsCtx.get('theme')
-    themeService = theme === undefined ? null : theme
 
     // 设置页签最先注册：后续初始化即使抛错，页签也不会跟着消失。
     slots.inject('settings.section', () => slots.register(
@@ -1114,6 +1112,15 @@ function apply(ctx) {
     runInitStep('restoreSelection', restoreSelection)
     runInitStep('applyFontLayer', applyFontLayer)
     runInitStep('applyThinkHeight', applyThinkHeight)
+
+    // theme 同样是「挂载期未必就绪」的服务：客户端插件并行装配，apply 时裸 get
+    // 往往拿到 undefined，themeService 会永久为 null——activateTheme 静默返回，
+    // activeTrack 停在 ''，主题与背景（applyBackdropLayer 只认 theme 轨道）一起失效。
+    // 用可选注入等到它就绪，再补跑一次选择恢复。
+    slotsCtx.inject(['theme'], (themeCtx) => {
+      themeService = themeCtx.theme
+      if (activeTrack !== 'skin') runInitStep('restoreSelection(theme)', restoreSelection)
+    })
 
     // 明暗切换（theme/change）后重算玻璃色；本包监听器晚于呈现器注册，读取的是已翻转的属性。
     slotsCtx.on('theme/change', () => applyBackdropLayer())
